@@ -21,7 +21,7 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        pip install -r requirements.txt
+        pip install -r nausica-grant-application/requirements.txt
 
     - name: Package Application
       run: zip -r deploy.zip . -x "venv/*" ".git/*" ".github/*"
