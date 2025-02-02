@@ -28,8 +28,8 @@ jobs:
 
     - name: Install AWS CLI & Elastic Beanstalk CLI
       run: |
-        sudo apt-get update
-        sudo apt-get install -y awscli
+        python -m pip install --upgrade pip
+        pip install awscli
         pip install awsebcli
 
     - name: Deploy to Elastic Beanstalk
