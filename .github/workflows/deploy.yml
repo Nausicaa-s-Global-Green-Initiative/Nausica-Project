@@ -52,4 +52,8 @@ jobs:
     - name: Deploy to Elastic Beanstalk
       run: |
         eb init "$EB_APPLICATION_NAME" --region "$AWS_REGION" --platform "Python 3.9"
+        eb use "$EB_ENVIRONMENT_NAME" || echo "Environment not set, skipping environment selection"
+        echo "Deploying to EB environment..."
+        eb deploy "$EB_ENVIRONMENT_NAME"
+        
         eb deploy "$EB_ENVIRONMENT_NAME"
