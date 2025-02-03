@@ -32,13 +32,23 @@ jobs:
         pip install awscli
         pip install awsebcli
 
+    - name: Configure AWS CLI
+      run: |
+        aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws configure set region ${{ secrets.AWS_REGION }}
+
+    - name: Check if EB Environment Exists
+      id: check_environment
+      run: |
+        aws elasticbeanstalk describe-environments --environment-names "$EB_ENVIRONMENT_NAME" --query "Environments[0].EnvironmentName" --output text || echo "Environment does not exist"
+
+    - name: Create EB Environment if it does not exist
+      if: steps.check_environment.outputs.result == 'Environment does not exist'
+      run: |
+        eb create "$EB_ENVIRONMENT_NAME" --region "$AWS_REGION" --platform "Python 3.9" --tier "WebServer" --scale 1 --keyname "$EB_KEYPAIR_NAME"
+
     - name: Deploy to Elastic Beanstalk
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_REGION: ${{ secrets.AWS_REGION }}
-        EB_APPLICATION_NAME: ${{ secrets.EB_APPLICATION_NAME }}
-        EB_ENVIRONMENT_NAME: ${{ secrets.EB_ENVIRONMENT_NAME }}
       run: |
         eb init "$EB_APPLICATION_NAME" --region "$AWS_REGION" --platform "Python 3.9"
         eb deploy "$EB_ENVIRONMENT_NAME"
