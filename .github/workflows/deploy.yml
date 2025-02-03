@@ -17,7 +17,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: "3.9"
+        python-version: "3.13"
 
     - name: Install Dependencies
       run: |
@@ -39,21 +39,8 @@ jobs:
         aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws configure set region ${{ secrets.AWS_REGION }}
 
-    - name: Check if EB Environment Exists
-      id: check_environment
-      run: |
-        aws elasticbeanstalk describe-environments --environment-names "$EB_ENVIRONMENT_NAME" --query "Environments[0].EnvironmentName" --output text || echo "Environment does not exist"
-
-    - name: Create EB Environment if it does not exist
-      if: steps.check_environment.outputs.result == 'Environment does not exist'
-      run: |
-        eb create "$EB_ENVIRONMENT_NAME" --region "$AWS_REGION" --platform "Python 3.9" --tier "WebServer" --scale 1 --keyname "$EB_KEYPAIR_NAME"
-
     - name: Deploy to Elastic Beanstalk
       run: |
-        eb init "$EB_APPLICATION_NAME" --region "$AWS_REGION" --platform "Python 3.9"
-        eb use "$EB_ENVIRONMENT_NAME" || echo "Environment not set, skipping environment selection"
-        echo "Deploying to EB environment..."
-        eb deploy "$EB_ENVIRONMENT_NAME"
-        
-        eb deploy "$EB_ENVIRONMENT_NAME"
+        eb init $EB_APPLICATION_NAME --region $AWS_REGION --platform "Python 3.13"
+        eb use $EB_ENVIRONMENT_NAME
+        eb deploy
