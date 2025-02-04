@@ -3,7 +3,7 @@ name: Deploy Flask to AWS Elastic Beanstalk
 on:
   push:
     branches:
-      - feat/SCRUM-7
+      - dev
 
 jobs:
   deploy:
