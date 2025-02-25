@@ -10,8 +10,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 application = Flask(__name__)
-  
-"""Set up database configuration """
+
+# Set up database configuration
 application.config['SQLALCHEMY_DATABASE_URI'] = (
     f"mysql+pymysql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@"
     f"{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}"
@@ -20,13 +20,13 @@ application.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(application)
 
-"""Initalise Flask Migrate"""
+# Initialize Flask Migrate
 migrate = Migrate(application, db)
 
 @application.route("/", methods=['GET', 'POST'])
 def home():
-    from models import ApplicationForm
     """Handle POST requests for form submissions."""
+    from .models import ApplicationForm  # Use absolute import
     if request.method == 'POST':
         try:
             first_name = request.form['first_name']
