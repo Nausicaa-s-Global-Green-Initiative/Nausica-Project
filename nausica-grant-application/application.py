@@ -4,9 +4,13 @@ from flask import Flask, render_template, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import SQLAlchemyError
 from flask_migrate import Migrate
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 application = Flask(__name__)
-
+  
 """Set up database configuration """
 application.config['SQLALCHEMY_DATABASE_URI'] = (
     f"mysql+pymysql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@"
