@@ -1,1 +1,1 @@
-web: gunicorn nausica-grant-application.application:app
+web: gunicorn nausica-grant-application.application:application
