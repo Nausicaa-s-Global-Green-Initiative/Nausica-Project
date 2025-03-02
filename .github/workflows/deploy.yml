@@ -51,7 +51,8 @@ jobs:
     - name: Set Elastic Beanstalk Environment Variables
       run: |
         echo "Setting environment variables in Elastic Beanstalk..."
-        eb use "$EB_ENVIRONMENT_NAME"
+        echo "EB_ENVIRONMENT_NAME=${{ secrets.EB_ENVIRONMENT_NAME }}"
+        eb use "${{ secrets.EB_ENVIRONMENT_NAME }}"
         eb setenv \
           DB_PORT=${{ secrets.DB_PORT }}
         
