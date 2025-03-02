@@ -42,6 +42,11 @@ jobs:
       run: |
         aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+     
+    - name: Initialize Elastic Beanstalk
+      run: |
+        echo "Initializing Elastic Beanstalk..."
+        eb init "$EB_APPLICATION_NAME" --region "$AWS_REGION" --platform "Python 3.9"
         
     - name: Set Elastic Beanstalk Environment Variables
       run: |
@@ -57,5 +62,4 @@ jobs:
         EB_APPLICATION_NAME: ${{ secrets.EB_APPLICATION_NAME }}
         EB_ENVIRONMENT_NAME: ${{ secrets.EB_ENVIRONMENT_NAME }}
       run: |
-        eb init "$EB_APPLICATION_NAME" --region "$AWS_REGION" --platform "Python 3.9"
         eb deploy "$EB_ENVIRONMENT_NAME"
