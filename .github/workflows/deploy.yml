@@ -27,6 +27,13 @@ jobs:
         #python -m venv venv
         #source venv/bin/activate
         pip install -r nausica-grant-application/requirements.txt
+        
+    - name: Load Environment Variables
+      run: |
+        echo "Loading environment variables from .flaskenv..."
+        set -a  # Export variables automatically
+        source .flaskenv || true  # Load .flaskenv safely
+        set +a
 
     - name: Package Application
       run: zip -r deploy.zip . -x "venv/*" ".git/*" ".github/*"
