@@ -6,8 +6,8 @@ jobs:
     steps:
       - uses: actions/checkout@master
       - name: Run Snyk to check for vulnerabilities
-        working-directory: ./nausica-grant-application
         uses: snyk/actions/python@master
+        working-directory: ./nausica-grant-application
         continue-on-error: true # To make sure that SARIF upload gets called
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
