@@ -1,11 +1,16 @@
 """Basic Flask application for rendering web pages."""
-import os
-from flask import Flask, render_template, request
+import os, pymysql
+from dotenv import load_dotenv
+from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flasgger import Swagger
 
 application = Flask(__name__)
 swagger = Swagger(application)
+
+# Load environment variables from .env file
+load_dotenv()
+
 
 "Set up database configuration"
 application.config['SQLALCHEMY_DATABASE_URI'] = (
@@ -15,6 +20,28 @@ application.config['SQLALCHEMY_DATABASE_URI'] = (
 application.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(application)
+
+class GrantApplication(db.Model):
+    __tablename__ = 'application_form'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    first_name = db.Column(db.String(100), nullable=False)
+    last_name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(200), nullable=False, unique=True)
+    grant_type = db.Column(db.String(100), nullable=False)
+    funding_amount = db.Column(db.Float, nullable=False)
+    special_award = db.Column(db.Boolean, default=False)
+    award_details = db.Column(db.Text)
+
+    def __init__(self, first_name, last_name, email, grant_type, funding_amount, special_award, award_details):
+        self.first_name = first_name
+        self.last_name = last_name
+        self.email = email
+        self.grant_type = grant_type
+        self.funding_amount = funding_amount
+        self.special_award = special_award
+        self.award_details = award_details
+
 
 @application.route("/", methods=['GET', 'POST'])
 def home():
@@ -111,5 +138,55 @@ def listview():
     return render_template('listview.html')
 
 
+@application.route('/submit', methods=['POST'])
+def submit_application():
+    """Handle form submission and save data to AWS RDS"""
+
+    if request.method == 'POST':
+        print("Received POST request!")
+
+        # Retrieve form data
+        first_name = request.form.get('first-name')
+        last_name = request.form.get('last-name')
+        email = request.form.get('email')
+        grant_type = request.form.get('grant-type')
+        funding_amount = request.form.get('funding-amount')
+        special_award = "Yes" if request.form.get('special-award-checkbox') == "on" else "No"
+        award_details = request.form.get('special-award-details')
+
+        print(f"Saving to DB: {first_name}, {last_name}, {email}, {grant_type}, {funding_amount}, {special_award}, {award_details}")
+
+        try:
+            # Direct connection to AWS RDS
+            connection = pymysql.connect(
+                host="nausicagrantsdb.czsuiq62mxcu.eu-west-1.rds.amazonaws.com",
+                user="GrantAdmin",
+                password="nausicaa2025!",
+                database="nausicagrantsdb",
+                port=3306,
+                cursorclass=pymysql.cursors.DictCursor
+            )
+
+            with connection.cursor() as cursor:
+                sql_query = """
+                INSERT INTO application_form (first_name, last_name, email, grant_type, funding_amount, special_award, award_details)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """
+                cursor.execute(sql_query, (first_name, last_name, email, grant_type, float(funding_amount), special_award, award_details))
+                connection.commit()
+
+            print("Data successfully saved to AWS RDS!")
+
+        except pymysql.Error as e:
+            print("Error inserting into database:", str(e))
+            connection.rollback()  # Rollback in case of error
+
+        finally:
+            connection.close()  # ✅ Ensure connection is closed properly
+
+        return redirect(url_for('home'))
+
+    return "Invalid Request", 400
+
 if __name__ == "__main__":
-    application.run(debug=True, host="0.0.0.0", port=5000)  # Adjust host/port if needed
+    application.run(debug=True, host="0.0.0.0", port=5000)  
