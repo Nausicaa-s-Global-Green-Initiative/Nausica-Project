@@ -6,6 +6,9 @@ defaults:
 jobs:
   security:
     runs-on: ubuntu-latest
+    defaults:
+     run:
+      working-directory: ././nausica-grant-application
     steps:
       - uses: actions/checkout@master
       - name: Run Snyk to check for vulnerabilities
