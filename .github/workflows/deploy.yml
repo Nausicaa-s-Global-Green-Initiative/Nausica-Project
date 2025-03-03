@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - dev
+  pull_request:
+    branches:
+      - dev 
 
 jobs:
   deploy:
@@ -21,8 +24,8 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        python -m venv venv
-        source venv/bin/activate
+        #python -m venv venv
+        #source venv/bin/activate
         pip install -r nausica-grant-application/requirements.txt
 
     - name: Package Application
