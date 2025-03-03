@@ -2,18 +2,20 @@ name: Example workflow for Python using Snyk
 on: push
 defaults:
  run:
-  working-directory: ././nausica-grant-application
+  working-directory: ./nausica-grant-application
 jobs:
   security:
     runs-on: ubuntu-latest
     defaults:
      run:
-      working-directory: ././nausica-grant-application
+      working-directory: ./nausica-grant-application
     steps:
       - uses: actions/checkout@master
         with:
           path: ./nausica-grant-application
       - name: Run Snyk to check for vulnerabilities
         uses: snyk/actions/python@master
+        with:
+          args: test
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
