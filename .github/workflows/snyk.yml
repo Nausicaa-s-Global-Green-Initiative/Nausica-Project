@@ -16,6 +16,6 @@ jobs:
       - name: Run Snyk to check for vulnerabilities
         uses: snyk/actions/python@master
         with:
-          args: test
+          args: test --prune-repeated-subdependencies
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
