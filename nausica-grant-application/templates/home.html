@@ -1,54 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <!-- ...existing code... -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grant Application System</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-    <!-- ...existing code... -->
+    <style>
+        @import url('https://fonts.googleapis.com/css?family=Titillium+Web:300,400,600');
+
+        body {
+            background: url('{{ url_for('static', filename='images/background.png') }}') no-repeat center center fixed;
+            background-size: cover;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .header {
+            position: absolute;
+            top: 20px;
+            display: flex;
+            gap: 20px;
+        }
+
+        /* Universal Button Styling */
+        .btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            font-family: 'Titillium Web', sans-serif; /* Ensures same font */
+            font-weight: bold; /* Matches button styling */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none; /* Removes underline for <a> */
+            display: flex; /* Ensures alignment */
+            align-items: center;
+            justify-content: center;
+            height: auto;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
+        .container {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+            text-align: center;
+        }
+    </style>
 </head>
-
-
-{% block content %}
-    <h1>{% block title %} Welcome to your Flask app! {% endblock %}</h1>
-{% endblock %}
-<div class="form">
-    
-      <div id="signup">   
-        <h1>Welcome to the Nausica Green Grant Application Form!</h1>
-        <h2>Please fill in the form below</h2>
-        <form action="/" method="post">
-        
-        <div class="top-row">
-          <div class="field-wrap">
-            <label>
-              First Name<span class="req">*</span>
-            </label>
-            <input type="text" name="first_name" required autocomplete="off" />
-          </div>
-      
-          <div class="field-wrap">
-            <label>
-              Last Name<span class="req">*</span>
-            </label>
-            <input type="text" name="last_name" required autocomplete="off"/>
-          </div>
-        </div>
-
-        <div class="field-wrap">
-          <label>
-            Email Address<span class="req">*</span>
-          </label>
-          <input type="email" name="email" required autocomplete="off"/>
-        </div>
-        
-        <div class="field-wrap">
-          <label>
-            Grant Type<span class="req">*</span>
-          </label>
-          <input type="text" name="grant_type" required autocomplete="off"/>
-        </div>
-        
-        <button type="submit" class="button button-block">Submit</button>
-        
-        </form>
-      
-    </div><!-- tab-content -->
-    
-</div> <!-- /form -->
+<body>
+    <div class="header">
+        <!-- Apply Grant button now has same style as Admin Login -->
+        <a href="{{ url_for('apply') }}" class="btn">Apply Grant</a>
+        <a href="{{ url_for('listview') }}" class="btn">Admin Login</a>
+    </div>
+    <div class="container">
+        <h1>Grant Application System</h1>
+    </div>
+</body>
+</html>

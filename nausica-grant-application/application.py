@@ -100,5 +100,16 @@ def about():
     return render_template("about.html")
 
 
+@application.route('/apply')
+def apply():
+    """Render the application.html page."""
+    return render_template('application.html')
+
+@application.route('/listview')
+def listview():
+    """Render the application.html page."""
+    return render_template('listview.html')
+
+
 if __name__ == "__main__":
     application.run(debug=True, host="0.0.0.0", port=5000)  # Adjust host/port if needed
