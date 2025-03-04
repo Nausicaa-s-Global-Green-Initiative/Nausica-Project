@@ -157,13 +157,20 @@ def submit_application():
         print(f"Saving to DB: {first_name}, {last_name}, {email}, {grant_type}, {funding_amount}, {special_award}, {award_details}")
 
         try:
-            # Direct connection to AWS RDS
+            # Load database credentials from .env
+            db_host = os.getenv("DB_HOST")
+            db_user = os.getenv("DB_USER")
+            db_password = os.getenv("DB_PASSWORD")
+            db_name = os.getenv("DB_NAME")
+            db_port = int(os.getenv("DB_PORT", 3306))  # Default to 3306
+
+            #  Establish MySQL connection using environment variables
             connection = pymysql.connect(
-                host="nausicagrantsdb.czsuiq62mxcu.eu-west-1.rds.amazonaws.com",
-                user="GrantAdmin",
-                password="nausicaa2025!",
-                database="nausicagrantsdb",
-                port=3306,
+                host=db_host,
+                user=db_user,
+                password=db_password,
+                database=db_name,
+                port=db_port,
                 cursorclass=pymysql.cursors.DictCursor
             )
 
@@ -182,7 +189,7 @@ def submit_application():
             connection.rollback()  # Rollback in case of error
 
         finally:
-            connection.close()  # ✅ Ensure connection is closed properly
+            connection.close()  # Ensure connection is closed properly
 
         return redirect(url_for('home'))
 
