@@ -23,6 +23,12 @@ application.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(application)
 
+"""Secure Cookie Configuration."""
+application.config['SESSION_COOKIE_SECURE'] = True
+application.config['REMEMBER_COOKIE_SECURE'] = True
+application.config['SESSION_COOKIE_HTTPONLY'] = True
+application.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+
 # Initialize Flask Migrate
 migrate = Migrate(application, db)
 
