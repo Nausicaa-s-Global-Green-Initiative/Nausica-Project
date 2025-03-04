@@ -151,7 +151,7 @@ def submit_application():
         email = request.form.get('email')
         grant_type = request.form.get('grant-type')
         funding_amount = request.form.get('funding-amount')
-        special_award = "Yes" if request.form.get('special-award-checkbox') == "on" else "No"
+        special_award = 1 if request.form.get('special-award-checkbox') == "on" else 0
         award_details = request.form.get('special-award-details')
 
         print(f"Saving to DB: {first_name}, {last_name}, {email}, {grant_type}, {funding_amount}, {special_award}, {award_details}")
