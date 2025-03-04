@@ -29,7 +29,7 @@ migrate = Migrate(application, db)
 @application.route("/", methods=['GET', 'POST'])
 def home():
     """Handle POST requests for form submissions."""
-    from .models import ApplicationForm  # Use absolute import
+    from models import ApplicationForm  # Use absolute import
     """
     
     Handle POST requests for form submissions.
