@@ -4,3 +4,5 @@ flasgger
 Flask-SQLAlchemy
 python-dotenv
 pymysql
+flask-migrate
+

@@ -99,8 +99,44 @@ def apply():
 
 @application.route('/listview')
 def listview():
-    """Render the application.html page."""
-    return render_template('listview.html')
+    """Retrieve all records and display in an HTML page."""
+
+    try:
+        # Load database credentials from .env
+        db_host = os.getenv("DB_HOST")
+        db_user = os.getenv("DB_USER")
+        db_password = os.getenv("DB_PASSWORD")
+        db_name = os.getenv("DB_NAME")
+        db_port = int(os.getenv("DB_PORT", 3306))  # Default to 3306
+
+        # Connect to MySQL using env variables
+        connection = pymysql.connect(
+            host=db_host,
+            user=db_user,
+            password=db_password,
+            database=db_name,
+            port=db_port,
+            cursorclass=pymysql.cursors.DictCursor
+        )
+
+        with connection.cursor() as cursor:
+            # Fetch all records from application_form table
+            cursor.execute("SELECT * FROM application_form")
+            records = cursor.fetchall()
+
+    except pymysql.Error as e:
+        print("Error fetching data:", str(e))
+        records = []
+
+    finally:
+        connection.close()  # Ensure connection is closed properly
+
+    return render_template('listview.html', records=records)
+
+@application.route('/logout')
+def logout():
+    """Dummy logout route to prevent BuildError."""
+    return redirect(url_for('home'))
 
 @application.route('/submit', methods=['POST'])
 def submit_application():
