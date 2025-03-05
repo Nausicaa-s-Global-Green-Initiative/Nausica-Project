@@ -1,3 +1,6 @@
 flask
 gunicorn
 flasgger
+Flask-SQLAlchemy
+python-dotenv
+pymysql
