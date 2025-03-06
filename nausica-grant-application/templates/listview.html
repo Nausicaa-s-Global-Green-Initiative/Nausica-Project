@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Submitted Grant Applications</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+
     <style>
         body {
             background: url('{{ url_for('static', filename='images/background.png') }}') no-repeat center center fixed;
@@ -20,26 +21,38 @@
         }
 
         .container {
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(255, 255, 255, 0.9); /* Light background */
             padding: 20px;
             border-radius: 10px;
-            color: white;
             text-align: center;
-            width: 70%;
+            width: 80%;
+            max-width: 1000px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        h1, h2, h3 {
+            color: #333;
+        }
+
+        .table-container {
+            margin-top: 20px;
+            overflow-x: auto;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 15px;
+            background: white;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
         }
 
         table, th, td {
-            border: 1px solid white;
+            border: 1px solid #ddd;
         }
 
         th, td {
-            padding: 10px;
+            padding: 12px;
             text-align: left;
         }
 
@@ -48,8 +61,29 @@
             color: white;
         }
 
-        .back-btn {
+        tbody tr {
+            background-color: white;
+            color: black;
+            transition: background 0.3s;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f8f9fa; /* Light gray for alternate rows */
+        }
+
+        tbody tr:hover {
+            background-color: #e2e6ea; /* Hover effect */
+            cursor: pointer;
+        }
+
+        .button-group {
             margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .back-btn, .submit-btn {
             padding: 10px 20px;
             font-size: 16px;
             font-family: 'Titillium Web', sans-serif;
@@ -57,44 +91,83 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            background-color: #dc3545;
-            color: white;
             text-decoration: none;
             display: inline-block;
+        }
+
+        .back-btn {
+            background-color: #dc3545;
+            color: white;
         }
 
         .back-btn:hover {
             background-color: #c82333;
         }
+
+        .submit-btn {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .submit-btn:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Submitted Grant Applications</h1>
-        <table>
-            <tr>
-                <th>First Name</th>
-                <th>Last Name</th>
-                <th>Email</th>
-                <th>Grant Type</th>
-                <th>Funding Amount</th>
-                <th>Special Award</th>
-                <th>Award Details</th>
-            </tr>
-            {% for application in applications %}
-            <tr>
-                <td>{{ application.first_name }}</td>
-                <td>{{ application.last_name }}</td>
-                <td>{{ application.email }}</td>
-                <td>{{ application.grant_type }}</td>
-                <td>€{{ application.funding_amount }}</td>
-                <td>{{ "Yes" if application.special_award else "No" }}</td>
-                <td>{{ application.special_award_details or "N/A" }}</td>
-            </tr>
-            {% endfor %}
-        </table>
+        <h1>Welcome to Nausicaa Green Grant</h1>
+        <h2>Submitted Applications</h2>
+        <h3>Click a row to edit an application</h3>
 
-        <a href="{{ url_for('home') }}" class="back-btn">Back</a>
+        {% if records %}
+        <div class="table-container">
+            <table border="1">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>First Name</th>
+                        <th>Last Name</th>
+                        <th>Email</th>
+                        <th>Grant Type</th>
+                        <th>Funding Amount</th>
+                        <th>Special Award</th>
+                        <th>Award Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in records %}
+                    <tr onclick="window.location.href='/edit/{{ row.id }}';" onkeydown="if(event.key === 'Enter') window.location.href='/edit/{{ row.id }}';">
+                        <td>{{ row.id }}</td>
+                        <td>{{ row.first_name }}</td>
+                        <td>{{ row.last_name }}</td>
+                        <td>{{ row.email }}</td>
+                        <td>{{ row.grant_type }}</td>
+                        <td>{{ row.funding_amount }}</td>
+                        <td>{{ "Yes" if row.special_award == 1 else "No" }}</td>
+                        <td>{{ row.award_details }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+            <p>No records found.</p>
+        {% endif %}
+
+        <div class="button-group">
+            <button class="back-btn" onclick="logoutAndRedirect()">Logout</button>
+        </div>
+        
+        <script>
+            function logoutAndRedirect() {
+                fetch('{{ url_for("logout") }}', { method: 'GET' })  // Call Flask logout route
+                .then(() => {
+                    window.location.href = '{{ url_for("home") }}';  // Redirect to home page
+                })
+                .catch(error => console.error("Logout failed:", error));
+            }
+        </script>
     </div>
 </body>
 </html>

@@ -2,6 +2,7 @@
 
 import os
 import pymysql
+import time
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
@@ -48,6 +49,38 @@ class GrantApplication(db.Model):
 
 # Initialize Flask Migrate
 migrate = Migrate(application, db)
+
+def get_db_credentials():
+    """Load database credentials from environment variables."""
+    return {
+        "host": os.getenv("DB_HOST"),
+        "user": os.getenv("DB_USER"),
+        "password": os.getenv("DB_PASSWORD"),
+        "database": os.getenv("DB_NAME"),
+        "port": int(os.getenv("DB_PORT", 3306))  # Default to 3306
+    }
+
+def create_sql_connection(retries=5, delay=2):
+    db_credentials = get_db_credentials()
+    connection = None
+
+    for attempt in range(retries):
+        try:
+            # Connect to MySQL using env variables
+            connection = pymysql.connect(
+                host=db_credentials["host"],
+                user=db_credentials["user"],
+                password=db_credentials["password"],
+                database=db_credentials["database"],
+                port=db_credentials["port"],
+                cursorclass=pymysql.cursors.DictCursor
+            )
+            break  # Exit loop if connection is successful
+        except pymysql.Error as e:
+            print(f"Attempt {attempt + 1} failed: {str(e)}")
+            time.sleep(delay)  # Wait before retrying
+
+    return connection
 
 @application.route("/", methods=['GET', 'POST'])
 def home():
@@ -99,13 +132,43 @@ def apply():
 
 @application.route('/listview')
 def listview():
-    """Render the application.html page."""
-    return render_template('listview.html')
+    """Retrieve all records and display in an HTML page."""
+    connection = None
+    try:
+        # Connect to MySQL using env variables
+        connection = create_sql_connection()
+
+        if connection:
+            with connection.cursor() as cursor:
+                # Fetch all records from application_form table
+                cursor.execute("SELECT * FROM application_form")
+                records = cursor.fetchall()
+        else:
+            print("Failed to establish database connection.")
+            records = []
+
+    except pymysql.Error as e:
+        print("Error fetching data:", str(e))
+        records = []
+
+    finally:
+        if connection:
+            connection.close()  # Ensure connection is closed properly
+
+
+    return render_template('listview.html', records=records)
+
+
+@application.route('/logout')
+def logout():
+    """Dummy logout route to prevent BuildError."""
+    return redirect(url_for('home'))
 
 @application.route('/submit', methods=['POST'])
 def submit_application():
-    """Handle form submission and save data to AWS RDS"""
+    """Handle form submission and save data using SQLAlchemy."""
     if request.method == 'POST':
+
         print("Received POST request!")
 
         # Retrieve form data
@@ -117,46 +180,40 @@ def submit_application():
         special_award = 1 if request.form.get('special-award-checkbox') == "on" else 0
         award_details = request.form.get('special-award-details')
 
-        print(f"Saving to DB: {first_name}, {last_name}, {email}, {grant_type}, {funding_amount}, {special_award}, {award_details}")
+        print(f"Saving to DB: {first_name, last_name, email, grant_type, funding_amount, special_award, award_details}")
 
+        connection = None
         try:
-            # Load database credentials from .env
-            db_host = os.getenv("DB_HOST")
-            db_user = os.getenv("DB_USER")
-            db_password = os.getenv("DB_PASSWORD")
-            db_name = os.getenv("DB_NAME")
-            db_port = int(os.getenv("DB_PORT", 3306))  # Default to 3306
+            # Connect to MySQL using env variables
+            connection = create_sql_connection()
 
-            # Establish MySQL connection using environment variables
-            connection = pymysql.connect(
-                host=db_host,
-                user=db_user,
-                password=db_password,
-                database=db_name,
-                port=db_port,
-                cursorclass=pymysql.cursors.DictCursor
-            )
+            if connection:
+                with connection.cursor() as cursor:
+                    sql_query = """
+                    INSERT INTO application_form (first_name, last_name, email, grant_type, funding_amount, special_award, award_details)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    """
+                    cursor.execute(sql_query, (first_name, last_name, email, grant_type, float(funding_amount), special_award, award_details))
+                    connection.commit()
 
-            with connection.cursor() as cursor:
-                sql_query = """
-                INSERT INTO application_form (first_name, last_name, email, grant_type, funding_amount, special_award, award_details)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-                """
-                cursor.execute(sql_query, (first_name, last_name, email, grant_type, float(funding_amount), special_award, award_details))
-                connection.commit()
-
-            print("Data successfully saved to AWS RDS!")
+                print("Data successfully saved to AWS RDS!")
+            else:
+                print("Failed to establish database connection.")
 
         except pymysql.Error as e:
             print("Error inserting into database:", str(e))
-            connection.rollback()  # Rollback in case of error
+            if connection:
+                connection.rollback()  # Rollback in case of error
 
         finally:
-            connection.close()  # Ensure connection is closed properly
+            if connection:
+                connection.close()  # Ensure connection is closed properly
+
 
         return redirect(url_for('home'))
 
     return "Invalid Request", 400
+
 
 if __name__ == "__main__":
     application.run(host="0.0.0.0", port=5000)
