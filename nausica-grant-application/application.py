@@ -50,38 +50,6 @@ class GrantApplication(db.Model):
 # Initialize Flask Migrate
 migrate = Migrate(application, db)
 
-def get_db_credentials():
-    """Load database credentials from environment variables."""
-    return {
-        "host": os.getenv("DB_HOST"),
-        "user": os.getenv("DB_USER"),
-        "password": os.getenv("DB_PASSWORD"),
-        "database": os.getenv("DB_NAME"),
-        "port": int(os.getenv("DB_PORT", 3306))  # Default to 3306
-    }
-
-def create_sql_connection(retries=5, delay=2):
-    db_credentials = get_db_credentials()
-    connection = None
-
-    for attempt in range(retries):
-        try:
-            # Connect to MySQL using env variables
-            connection = pymysql.connect(
-                host=db_credentials["host"],
-                user=db_credentials["user"],
-                password=db_credentials["password"],
-                database=db_credentials["database"],
-                port=db_credentials["port"],
-                cursorclass=pymysql.cursors.DictCursor
-            )
-            break  # Exit loop if connection is successful
-        except pymysql.Error as e:
-            print(f"Attempt {attempt + 1} failed: {str(e)}")
-            time.sleep(delay)  # Wait before retrying
-
-    return connection
-
 @application.route("/", methods=['GET', 'POST'])
 def home():
     """Handle POST requests for form submissions."""
