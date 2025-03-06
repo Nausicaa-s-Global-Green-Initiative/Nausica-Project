@@ -132,31 +132,15 @@ def apply():
 
 @application.route('/listview')
 def listview():
-    """Retrieve all records and display in an HTML page."""
-    connection = None
+    """Retrieve all records and display in an HTML page using SQLAlchemy."""
     try:
-        # Connect to MySQL using env variables
-        connection = create_sql_connection()
-
-        if connection:
-            with connection.cursor() as cursor:
-                # Fetch all records from application_form table
-                cursor.execute("SELECT * FROM application_form")
-                records = cursor.fetchall()
-        else:
-            print("Failed to establish database connection.")
-            records = []
-
-    except pymysql.Error as e:
+        records = GrantApplication.query.all()
+    except SQLAlchemyError as e:
         print("Error fetching data:", str(e))
         records = []
 
-    finally:
-        if connection:
-            connection.close()  # Ensure connection is closed properly
-
-
     return render_template('listview.html', records=records)
+
 
 
 @application.route('/logout')
@@ -168,51 +152,38 @@ def logout():
 def submit_application():
     """Handle form submission and save data using SQLAlchemy."""
     if request.method == 'POST':
-
-        print("Received POST request!")
-
-        # Retrieve form data
-        first_name = request.form.get('first-name')
-        last_name = request.form.get('last-name')
-        email = request.form.get('email')
-        grant_type = request.form.get('grant-type')
-        funding_amount = request.form.get('funding-amount')
-        special_award = 1 if request.form.get('special-award-checkbox') == "on" else 0
-        award_details = request.form.get('special-award-details')
-
-        print(f"Saving to DB: {first_name, last_name, email, grant_type, funding_amount, special_award, award_details}")
-
-        connection = None
         try:
-            # Connect to MySQL using env variables
-            connection = create_sql_connection()
+            first_name = request.form.get('first-name')
+            last_name = request.form.get('last-name')
+            email = request.form.get('email')
+            grant_type = request.form.get('grant-type')
+            funding_amount = float(request.form.get('funding-amount', 0))
+            special_award = request.form.get('special-award-checkbox') == "on"
+            award_details = request.form.get('special-award-details')
 
-            if connection:
-                with connection.cursor() as cursor:
-                    sql_query = """
-                    INSERT INTO application_form (first_name, last_name, email, grant_type, funding_amount, special_award, award_details)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s)
-                    """
-                    cursor.execute(sql_query, (first_name, last_name, email, grant_type, float(funding_amount), special_award, award_details))
-                    connection.commit()
+            application_form = GrantApplication(
+                first_name=first_name,
+                last_name=last_name,
+                email=email,
+                grant_type=grant_type,
+                funding_amount=funding_amount,
+                special_award=special_award,
+                award_details=award_details
+            )
 
-                print("Data successfully saved to AWS RDS!")
-            else:
-                print("Failed to establish database connection.")
+            db.session.add(application_form)
+            db.session.commit()
+            print("Data successfully saved to database!")
 
-        except pymysql.Error as e:
+        except SQLAlchemyError as e:
+            db.session.rollback()
             print("Error inserting into database:", str(e))
-            if connection:
-                connection.rollback()  # Rollback in case of error
-
-        finally:
-            if connection:
-                connection.close()  # Ensure connection is closed properly
-
+            return jsonify(error=str(e), message="Failed to process request"), 500
 
         return redirect(url_for('home'))
 
     return "Invalid Request", 400
+
 
 
 if __name__ == "__main__":
