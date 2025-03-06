@@ -132,31 +132,15 @@ def apply():
 
 @application.route('/listview')
 def listview():
-    """Retrieve all records and display in an HTML page."""
-    connection = None
+    """Retrieve all records and display in an HTML page using SQLAlchemy."""
     try:
-        # Connect to MySQL using env variables
-        connection = create_sql_connection()
-
-        if connection:
-            with connection.cursor() as cursor:
-                # Fetch all records from application_form table
-                cursor.execute("SELECT * FROM application_form")
-                records = cursor.fetchall()
-        else:
-            print("Failed to establish database connection.")
-            records = []
-
-    except pymysql.Error as e:
+        records = GrantApplication.query.all()
+    except SQLAlchemyError as e:
         print("Error fetching data:", str(e))
         records = []
 
-    finally:
-        if connection:
-            connection.close()  # Ensure connection is closed properly
-
-
     return render_template('listview.html', records=records)
+
 
 
 @application.route('/logout')
