@@ -4,7 +4,7 @@ import os
 import pymysql
 import time
 from dotenv import load_dotenv
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask import Flask, render_template, request, redirect, url_for, jsonify, session
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import SQLAlchemyError
 from flask_migrate import Migrate
@@ -13,8 +13,21 @@ from flasgger import Swagger
 # Load environment variables from .env file
 load_dotenv()
 
+
 application = Flask(__name__)
+application.secret_key = os.getenv("FLASK_SECRET_KEY")
 swagger = Swagger(application)
+
+# HTTPS Redirect Middleware
+@application.before_request
+def before_request():
+    if 'localhost' in request.host or '127.0.0.1' in request.host:
+        # Skip HTTPS redirect for localhost
+        pass
+    elif not request.is_secure:
+        url = request.url.replace('http://', 'https://', 1)
+        return redirect(url, code=301)
+
 
 # Set up database configuration
 application.config['SQLALCHEMY_DATABASE_URI'] = (
@@ -26,10 +39,10 @@ application.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(application)
 
 """Secure Cookie Configuration."""
-#application.config['SESSION_COOKIE_SECURE'] = True
-application.config['SESSION_COOKIE_SECURE'] = False  # Only for testing without HTTPS
-#application.config['REMEMBER_COOKIE_SECURE'] = True
-application.config['REMEMBER_COOKIE_SECURE'] = False  # Only for testing without HTTPS
+application.config['SESSION_COOKIE_SECURE'] = True
+#application.config['SESSION_COOKIE_SECURE'] = False  # Only for testing without HTTPS
+application.config['REMEMBER_COOKIE_SECURE'] = True
+#application.config['REMEMBER_COOKIE_SECURE'] = False  # Only for testing without HTTPS
 application.config['SESSION_COOKIE_HTTPONLY'] = True
 application.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
@@ -163,4 +176,4 @@ def submit_application():
 
 
 if __name__ == "__main__":
-    application.run(host="0.0.0.0", port=5000)
+    application.run(host="0.0.0.0", port=5000, debug = True)
