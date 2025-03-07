@@ -1,0 +1,55 @@
+<head>
+  <title>Nausica Green Grant Application</title>
+    <!-- ...existing code... -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <!-- ...existing code... -->
+</head>
+
+
+{% block content %}
+    <h1>{% block title %} Welcome to your Flask app! {% endblock %}</h1>
+{% endblock %}
+<div class="form">
+    
+      <div id="signup">   
+        <h1>Welcome to the Nausica Green Grant Application Form!</h1>
+        <h2>Please fill in the form below</h2>
+        <form action="/" method="post">
+        
+        <div class="top-row">
+          <div class="field-wrap">
+            <label for="first_name">
+              First Name<span class="req">*</span>
+            </label>
+            <input type="text" id="first_name" name="first_name" required autocomplete="off" />
+          </div>
+      
+          <div class="field-wrap">
+            <label for="last_name">
+              Last Name<span class="req">*</span>
+            </label>
+            <input type="text" id="last_name" name="last_name" required autocomplete="off"/>
+          </div>
+        </div>
+
+        <div class="field-wrap">
+          <label for="email">
+            Email Address<span class="req">*</span>
+          </label>
+          <input type="email" id="email" name="email" required autocomplete="off"/>
+        </div>
+        
+        <div class="field-wrap">
+          <label for="grant_type">
+            Grant Type<span class="req">*</span>
+          </label>
+          <input type="text" id="grant_type" name="grant_type" required autocomplete="off"/>
+        </div>
+        
+        <button type="submit" class="button button-block">Submit</button>
+        
+        </form>
+      
+    </div><!-- tab-content -->
+    
+</div> <!-- /form -->

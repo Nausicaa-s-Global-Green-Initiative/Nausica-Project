@@ -1,4 +1,4 @@
-from .application import db
+from application import db
 
 class ApplicationForm(db.Model):
     grant_application_id = db.Column(db.Integer, primary_key=True)
