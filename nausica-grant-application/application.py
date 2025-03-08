@@ -13,6 +13,9 @@ from flasgger import Swagger
 # Load environment variables from .env file
 load_dotenv()
 
+from flask import Flask, render_template, request, redirect, url_for, jsonify, session
+from db_config import db  # Import db from db_config
+from models import ApplicationForm  
 
 application = Flask(__name__)
 application.secret_key = os.getenv("FLASK_SECRET_KEY")
@@ -48,29 +51,7 @@ application.config['SQLALCHEMY_DATABASE_URI'] = (
 )
 application.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-db = SQLAlchemy(application) 
-
-class GrantApplication(db.Model):
-    __tablename__ = 'application_form'
-    __table_args__ = {'extend_existing': True}
-
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    first_name = db.Column(db.String(100), nullable=False)
-    last_name = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(200), nullable=False, unique=True)
-    grant_type = db.Column(db.String(100), nullable=False)
-    funding_amount = db.Column(db.Float, nullable=False)
-    special_award = db.Column(db.Boolean, default=False)
-    award_details = db.Column(db.Text)
-
-    def __init__(self, first_name, last_name, email, grant_type, funding_amount, special_award, award_details):
-        self.first_name = first_name
-        self.last_name = last_name
-        self.email = email
-        self.grant_type = grant_type
-        self.funding_amount = funding_amount
-        self.special_award = special_award
-        self.award_details = award_details
+db.init_app(application)  # Initialize db with app
 
 # Initialize Flask Migrate
 migrate = Migrate(application, db)
@@ -86,7 +67,7 @@ def home():
             grant_type = request.form['grant_type']
 
             # Create an instance of GrantApplication model with the form submission data
-            application_form = GrantApplication(
+            application_form = ApplicationForm(
                 first_name=first_name,
                 last_name=last_name,
                 email=email,
@@ -130,7 +111,7 @@ def apply():
 def listview():
     """Retrieve all records and display in an HTML page using SQLAlchemy."""
     try:
-        records = GrantApplication.query.all()
+        records = ApplicationForm.query.all()
     except SQLAlchemyError as e:
         print("Error fetching data:", str(e))
         records = []
@@ -157,7 +138,7 @@ def submit_application():
             special_award = request.form.get('special-award-checkbox') == "on"
             award_details = request.form.get('special-award-details')
 
-            application_form = GrantApplication(
+            application_form = ApplicationForm(
                 first_name=first_name,
                 last_name=last_name,
                 email=email,
@@ -194,4 +175,4 @@ if __name__ == "__main__":
             debug=True, 
             ssl_context='adhoc'  # Uses a self-signed certificate
         )
-    
+
