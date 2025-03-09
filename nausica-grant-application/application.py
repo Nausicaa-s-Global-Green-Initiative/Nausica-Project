@@ -25,14 +25,6 @@ application.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(application)
 
-"""Secure Cookie Configuration."""
-#application.config['SESSION_COOKIE_SECURE'] = True
-application.config['SESSION_COOKIE_SECURE'] = False  # Only for testing without HTTPS
-#application.config['REMEMBER_COOKIE_SECURE'] = True
-application.config['REMEMBER_COOKIE_SECURE'] = False  # Only for testing without HTTPS
-application.config['SESSION_COOKIE_HTTPONLY'] = True
-application.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-
 class GrantApplication(db.Model):
     __tablename__ = 'application_form'
     __table_args__ = {'extend_existing': True}
