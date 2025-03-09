@@ -4,7 +4,7 @@ import os
 import pymysql
 import time
 from dotenv import load_dotenv
-from flask import Flask, render_template, request, redirect, url_for, jsonify, session
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import SQLAlchemyError
 from flask_migrate import Migrate
@@ -13,36 +13,8 @@ from flasgger import Swagger
 # Load environment variables from .env file
 load_dotenv()
 
-from flask import Flask, render_template, request, redirect, url_for, jsonify, session
-from db_config import db  # Import db from db_config
-from models import ApplicationForm  
-
 application = Flask(__name__)
-application.secret_key = os.getenv("FLASK_SECRET_KEY")
 swagger = Swagger(application)
-
-# HTTPS Redirect Middleware
-@application.before_request
-def before_request():
-    # Don't redirect HTTPS requests (prevents redirect loops)
-    if request.is_secure:
-        pass
-    # Skip HTTPS redirect for localhost
-    elif 'localhost' in request.host or '127.0.0.1' in request.host:
-        pass
-    # Redirect HTTP to HTTPS in production
-    else:
-        url = request.url.replace('http://', 'https://', 1)
-        return redirect(url, code=301)
-    
-    # Configure cookies based on environment
-    if 'localhost' in request.host or '127.0.0.1' in request.host:
-        application.config['SESSION_COOKIE_SECURE'] = False
-        application.config['REMEMBER_COOKIE_SECURE'] = False
-        application.config['SESSION_COOKIE_DOMAIN'] = None
-    else:
-        application.config['SESSION_COOKIE_SECURE'] = True
-        application.config['REMEMBER_COOKIE_SECURE'] = True
 
 # Set up database configuration
 application.config['SQLALCHEMY_DATABASE_URI'] = (
@@ -51,7 +23,37 @@ application.config['SQLALCHEMY_DATABASE_URI'] = (
 )
 application.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-db.init_app(application)  # Initialize db with app
+db = SQLAlchemy(application)
+
+"""Secure Cookie Configuration."""
+#application.config['SESSION_COOKIE_SECURE'] = True
+application.config['SESSION_COOKIE_SECURE'] = False  # Only for testing without HTTPS
+#application.config['REMEMBER_COOKIE_SECURE'] = True
+application.config['REMEMBER_COOKIE_SECURE'] = False  # Only for testing without HTTPS
+application.config['SESSION_COOKIE_HTTPONLY'] = True
+application.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+
+class GrantApplication(db.Model):
+    __tablename__ = 'application_form'
+    __table_args__ = {'extend_existing': True}
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    first_name = db.Column(db.String(100), nullable=False)
+    last_name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(200), nullable=False, unique=True)
+    grant_type = db.Column(db.String(100), nullable=False)
+    funding_amount = db.Column(db.Float, nullable=False)
+    special_award = db.Column(db.Boolean, default=False)
+    award_details = db.Column(db.Text)
+
+    def __init__(self, first_name, last_name, email, grant_type, funding_amount, special_award, award_details):
+        self.first_name = first_name
+        self.last_name = last_name
+        self.email = email
+        self.grant_type = grant_type
+        self.funding_amount = funding_amount
+        self.special_award = special_award
+        self.award_details = award_details
 
 # Initialize Flask Migrate
 migrate = Migrate(application, db)
@@ -67,7 +69,7 @@ def home():
             grant_type = request.form['grant_type']
 
             # Create an instance of GrantApplication model with the form submission data
-            application_form = ApplicationForm(
+            application_form = GrantApplication(
                 first_name=first_name,
                 last_name=last_name,
                 email=email,
@@ -102,16 +104,13 @@ def about():
 @application.route('/apply')
 def apply():
     """Render the application.html page."""
-    session['visited_apply'] = True
-    #print("Session contents:", dict(session))  # Debug session
-    #print("Secret key is set:", application.secret_key is not None)  # Check if key is loaded
     return render_template('application.html')
 
 @application.route('/listview')
 def listview():
     """Retrieve all records and display in an HTML page using SQLAlchemy."""
     try:
-        records = ApplicationForm.query.all()
+        records = GrantApplication.query.all()
     except SQLAlchemyError as e:
         print("Error fetching data:", str(e))
         records = []
@@ -138,7 +137,7 @@ def submit_application():
             special_award = request.form.get('special-award-checkbox') == "on"
             award_details = request.form.get('special-award-details')
 
-            application_form = ApplicationForm(
+            application_form = GrantApplication(
                 first_name=first_name,
                 last_name=last_name,
                 email=email,
@@ -164,15 +163,4 @@ def submit_application():
 
 
 if __name__ == "__main__":
-    if 'localhost' in request.host or '127.0.0.1' in request.host:
-        # Run with debug mode but without SSL for local development
-        application.run(host="0.0.0.0", port=5000, debug=True)
-    else:
-        # Run with SSL for development testing of HTTPS
-        application.run(
-            host="0.0.0.0", 
-            port=5000, 
-            debug=True, 
-            ssl_context='adhoc'  # Uses a self-signed certificate
-        )
-
+    application.run(host="0.0.0.0", port=5000)
