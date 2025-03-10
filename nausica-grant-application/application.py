@@ -8,7 +8,7 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify, s
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import SQLAlchemyError
 from flask_migrate import Migrate
-from flasgger import Swagger
+from flasgger import Swagger, swag_from
 
 # Load environment variables from .env file
 load_dotenv()
@@ -107,7 +107,18 @@ def apply():
     #print("Secret key is set:", application.secret_key is not None)  # Check if key is loaded
     return render_template('application.html')
 
+### Swagger: Get for all grant applications
 @application.route('/listview')
+@swag_from({
+    'summary': 'List all applications',
+    'description': 'Displays all submitted applications in tabular format',
+    'responses': {
+        '200': {
+            'description': 'List of applications displayed successfully'
+        }
+    }
+})
+
 def listview():
     """Retrieve all records and display in an HTML page using SQLAlchemy."""
     try:
@@ -125,7 +136,66 @@ def logout():
     """Dummy logout route to prevent BuildError."""
     return redirect(url_for('home'))
 
+
+### Swagger: POST for application form
 @application.route('/submit', methods=['POST'])
+@swag_from({
+    'summary': 'Submit a new grant application',
+    'description': 'Accepts form data for a new grant application and saves it to the database',
+    'parameters': [
+        {
+            'name': 'first-name',
+            'in': 'formData',
+            'type': 'string',
+            'required': True
+        },
+        {
+            'name': 'last-name',
+            'in': 'formData',
+            'type': 'string',
+            'required': True
+        },
+        {
+            'name': 'email',
+            'in': 'formData',
+            'type': 'string',
+            'required': True
+        },
+        {
+            'name': 'grant-type',
+            'in': 'formData',
+            'type': 'string',
+            'required': True
+        },
+        {
+            'name': 'funding-amount',
+            'in': 'formData',
+            'type': 'number',
+            'format': 'float',
+            'required': True
+        },
+        {
+            'name': 'special-award-checkbox',
+            'in': 'formData',
+            'type': 'string',
+            'required': False
+        },
+        {
+            'name': 'special-award-details',
+            'in': 'formData',
+            'type': 'string',
+            'required': False
+        }
+    ],
+    'responses': {
+        '200': {
+            'description': 'Application submitted successfully'
+        },
+        '500': {
+            'description': 'Database error'
+        }
+    }
+})
 def submit_application():
     """Handle form submission and save data using SQLAlchemy."""
     if request.method == 'POST':
