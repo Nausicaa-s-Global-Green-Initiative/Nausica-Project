@@ -1,1 +1,1 @@
-web: gunicorn nausica-grant-application.application:application
+web: gunicorn --chdir /var/app/current/nausica-grant-application  --workers 5 application:application
