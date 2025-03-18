@@ -132,87 +132,39 @@ def listview():
 
 #-------------------
 @application.route('/edit/<int:id>', methods=['GET', 'POST'])
-#@login_required  # Restricts access to logged-in users only
 def edit_application(id):
-    """Fetch data for editing and update the application"""
- #   user = current_user.id  # Get current user's ID
-
+    """Fetch data for editing and update the application using SQLAlchemy."""
     try:
-        # Load database credentials from .env
-        db_host = os.getenv("DB_HOST")
-        db_user = os.getenv("DB_USER")
-        db_password = os.getenv("DB_PASSWORD")
-        db_name = os.getenv("DB_NAME")
-        db_port = int(os.getenv("DB_PORT", 3306))
-
-        connection = pymysql.connect(
-            host=db_host,
-            user=db_user,
-            password=db_password,
-            database=db_name,
-            port=db_port,
-            cursorclass=pymysql.cursors.DictCursor
-        )
-
-        with connection.cursor() as cursor:
-            # Fetch record by ID
-            cursor.execute("SELECT * FROM application_form WHERE grant_application_id = %s", (id,))
-            record = cursor.fetchone()
-
-    except pymysql.Error as e:
+        # Fetch record by ID using SQLAlchemy
+        record = ApplicationForm.query.get(id)
+        if not record:
+            return "Record not found", 404
+    except SQLAlchemyError as e:
         print("Error fetching data:", str(e))
-        record = None
-
-    finally:
-        connection.close()
+        return "Database error", 500
 
     if request.method == 'POST':
-        # Get updated form data
-        first_name = request.form.get('first-name')
-        last_name = request.form.get('last-name')
-        email = request.form.get('email')
-        grant_type = request.form.get('grant-type')
-        funding_amount = request.form.get('funding-amount')
-        special_award = 1 if request.form.get('special-award-checkbox') == "on" else 0
-        award_details = request.form.get('special-award-details')
-
         try:
-            connection = pymysql.connect(
-                host=db_host,
-                user=db_user,
-                password=db_password,
-                database=db_name,
-                port=db_port,
-                cursorclass=pymysql.cursors.DictCursor
-            )
+            # Get updated form data
+            record.first_name = request.form.get('first-name')
+            record.last_name = request.form.get('last-name')
+            record.email = request.form.get('email')
+            record.grant_type = request.form.get('grant-type')
+            record.funding_amount = float(request.form.get('funding-amount', 0))
+            record.special_award = request.form.get('special-award-checkbox') == "on"
+            record.award_details = request.form.get('special-award-details')
 
-            with connection.cursor() as cursor:
-                # Update the record in DB
-                sql_update = """
-                UPDATE application_form 
-                SET first_name=%s, last_name=%s, email=%s, grant_type=%s, 
-                    funding_amount=%s, special_award=%s, award_details=%s
-                WHERE grant_application_id=%s
-                """
-                cursor.execute(sql_update, (first_name, last_name, email, grant_type, 
-                                            funding_amount, special_award, award_details, id))
-                connection.commit()
-
-           # log_action(f"EDITED APPLICATION ID: {grant_application_id}", user)  # Log changes
-
+            # Commit changes to the database
+            db.session.commit()
             print("Record updated successfully!")
-
-        except pymysql.Error as e:
+        except SQLAlchemyError as e:
+            db.session.rollback()
             print("Error updating data:", str(e))
-            connection.rollback()
-
-        finally:
-            connection.close()
+            return "Failed to update record", 500
 
         return redirect(url_for('listview'))  # Redirect to the list after updating
 
     return render_template('edit_form.html', record=record)
-
 
 #--------------------
 
