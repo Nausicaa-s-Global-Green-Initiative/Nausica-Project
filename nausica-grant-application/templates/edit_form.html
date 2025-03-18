@@ -36,9 +36,19 @@
             textarea.disabled = !checkbox.checked;
         }
 
+        function setupCancelButton() {
+            let cancelButton = document.querySelector('.cancel-btn');
+            if (cancelButton) {
+                cancelButton.addEventListener('click', function() {
+                    window.location.href = this.getAttribute('data-url');
+                });
+            }
+        }
+
         document.addEventListener("DOMContentLoaded", function() {
             validateFundingAmount();
             toggleSpecialAwardDetails();
+            setupCancelButton();
         });
     </script>
 </head>
@@ -50,7 +60,8 @@
 
         <div class="form-container">
             {% if record %}
-            <form action="{{ url_for('edit_application', id=record.grant_application_id) }}" method="POST">
+            <form method="POST" action="{{ url_for('edit_application', id=record.grant_application_id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <div class="form-group">
                     <label for="first-name">First Name</label>
                     <input type="text" id="first-name" name="first-name" value="{{ record.first_name }}" required>
@@ -90,7 +101,7 @@
 
                 <div class="button-group">
                     <button type="submit" class="submit-btn">Update</button>
-                    <button type="button" class="cancel-btn" onclick="window.location.href='{{ url_for('listview') }}'">Cancel</button>
+                    <button type="button" class="cancel-btn" data-url="{{ url_for('listview') }}">Cancel</button>
                 </div>
             </form>
             {% else %}

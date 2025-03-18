@@ -10,6 +10,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from flask_migrate import Migrate
 from flasgger import Swagger, swag_from
 from flask_login import login_required
+from flask_wtf.csrf import CSRFProtect
 
 # Load environment variables from .env file
 load_dotenv()
@@ -21,6 +22,9 @@ from models import ApplicationForm
 application = Flask(__name__)
 application.secret_key = os.getenv("FLASK_SECRET_KEY")
 swagger = Swagger(application)
+
+# Create and initialize CSRF protection
+csrf = CSRFProtect(application)
 
 # HTTPS Redirect Middleware
 @application.before_request
