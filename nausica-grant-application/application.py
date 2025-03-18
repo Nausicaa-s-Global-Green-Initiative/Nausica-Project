@@ -130,6 +130,93 @@ def listview():
     return render_template('listview.html', records=records)
 
 
+#-------------------
+@application.route('/edit/<int:id>', methods=['GET', 'POST'])
+#@login_required  # Restricts access to logged-in users only
+def edit_application(id):
+    """Fetch data for editing and update the application"""
+ #   user = current_user.id  # Get current user's ID
+
+    try:
+        # Load database credentials from .env
+        db_host = os.getenv("DB_HOST")
+        db_user = os.getenv("DB_USER")
+        db_password = os.getenv("DB_PASSWORD")
+        db_name = os.getenv("DB_NAME")
+        db_port = int(os.getenv("DB_PORT", 3306))
+
+        connection = pymysql.connect(
+            host=db_host,
+            user=db_user,
+            password=db_password,
+            database=db_name,
+            port=db_port,
+            cursorclass=pymysql.cursors.DictCursor
+        )
+
+        with connection.cursor() as cursor:
+            # Fetch record by ID
+            cursor.execute("SELECT * FROM application_form WHERE grant_application_id = %s", (id,))
+            record = cursor.fetchone()
+
+    except pymysql.Error as e:
+        print("Error fetching data:", str(e))
+        record = None
+
+    finally:
+        connection.close()
+
+    if request.method == 'POST':
+        # Get updated form data
+        first_name = request.form.get('first-name')
+        last_name = request.form.get('last-name')
+        email = request.form.get('email')
+        grant_type = request.form.get('grant-type')
+        funding_amount = request.form.get('funding-amount')
+        special_award = 1 if request.form.get('special-award-checkbox') == "on" else 0
+        award_details = request.form.get('special-award-details')
+
+        try:
+            connection = pymysql.connect(
+                host=db_host,
+                user=db_user,
+                password=db_password,
+                database=db_name,
+                port=db_port,
+                cursorclass=pymysql.cursors.DictCursor
+            )
+
+            with connection.cursor() as cursor:
+                # Update the record in DB
+                sql_update = """
+                UPDATE application_form 
+                SET first_name=%s, last_name=%s, email=%s, grant_type=%s, 
+                    funding_amount=%s, special_award=%s, award_details=%s
+                WHERE grant_application_id=%s
+                """
+                cursor.execute(sql_update, (first_name, last_name, email, grant_type, 
+                                            funding_amount, special_award, award_details, id))
+                connection.commit()
+
+           # log_action(f"EDITED APPLICATION ID: {grant_application_id}", user)  # Log changes
+
+            print("Record updated successfully!")
+
+        except pymysql.Error as e:
+            print("Error updating data:", str(e))
+            connection.rollback()
+
+        finally:
+            connection.close()
+
+        return redirect(url_for('listview'))  # Redirect to the list after updating
+
+    return render_template('edit_form.html', record=record)
+
+
+#--------------------
+
+
 
 @application.route('/logout')
 def logout():
