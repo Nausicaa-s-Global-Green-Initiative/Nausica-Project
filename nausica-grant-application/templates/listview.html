@@ -137,8 +137,8 @@
                 </thead>
                 <tbody>
                     {% for row in records %}
-                    <tr onclick="window.location.href='/edit/{{ row.id }}';" onkeydown="if(event.key === 'Enter') window.location.href='/edit/{{ row.id }}';">
-                        <td>{{ row.id }}</td>
+                    <tr onclick="window.location.href='/edit/{{ row.grant_application_id }}';" onkeydown="if(event.key === 'Enter') window.location.href='/edit/{{ row.id }}';">
+                        <td>{{ row.grant_application_id }}</td>
                         <td>{{ row.first_name }}</td>
                         <td>{{ row.last_name }}</td>
                         <td>{{ row.email }}</td>
