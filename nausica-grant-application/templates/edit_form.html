@@ -60,7 +60,7 @@
 
         <div class="form-container">
             {% if record %}
-            <form method="POST" action="{{ url_for('edit_application', id=record.grant_application_id) }}">
+            <form method="POST" action="{{ url_for('update_application', id=record.grant_application_id) }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <div class="form-group">
                     <label for="first-name">First Name</label>

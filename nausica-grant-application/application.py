@@ -135,10 +135,9 @@ def listview():
     return render_template('listview.html', records=records)
 
 
-#-------------------
-@application.route('/edit/<int:id>', methods=['GET', 'POST'])
+@application.route('/edit/<int:id>', methods=['GET'])
 def edit_application(id):
-    """Fetch data for editing and update the application using SQLAlchemy."""
+    """Display the form for editing an application."""
     try:
         # Fetch record by ID using SQLAlchemy
         record = db.session.get(ApplicationForm, id)
@@ -148,45 +147,47 @@ def edit_application(id):
         print("Error fetching data:", str(e))
         return "Database error", 500
 
-    if request.method == 'POST':
-        try:
-            # **Double-check if the record still exists before updating**
-            db.session.refresh(record)  # Ensures the record is not deleted
-
-            if not record:
-                return "Error: Record was deleted before updating.", 404
-
-            # Get updated form data
-            record.first_name = request.form.get('first-name', record.first_name)
-            record.last_name = request.form.get('last-name', record.last_name)
-            record.email = request.form.get('email', record.email)
-            record.grant_type = request.form.get('grant-type', record.grant_type)
-
-            # Handle numeric fields safely
-            try:
-                record.funding_amount = float(request.form.get('funding-amount', record.funding_amount))
-            except ValueError:
-                return "Invalid funding amount", 400
-
-            record.special_award = request.form.get('special-award-checkbox') == "on"
-            record.award_details = request.form.get('special-award-details', record.award_details)
-
-            # Commit changes to the database
-            db.session.commit()
-            print(f"Record {id} updated successfully!")
-        except SQLAlchemyError as e:
-            db.session.rollback()
-            print("Error updating data:", str(e))
-            return "Failed to update record", 500
-
-        return redirect(url_for('listview'))  # Redirect to the list after updating
-
     return render_template('edit_form.html', record=record)
 
+@application.route('/edit/<int:id>', methods=['POST'])
+def update_application(id):
+    """Process the form submission to update an application."""
+    try:
+        # Fetch record by ID using SQLAlchemy
+        record = db.session.get(ApplicationForm, id)
+        if not record:
+            return "Record not found", 404
 
-#--------------------
+        # **Double-check if the record still exists before updating**
+        db.session.refresh(record)  # Ensures the record is not deleted
 
+        if not record:
+            return "Error: Record was deleted before updating.", 404
 
+        # Get updated form data
+        record.first_name = request.form.get('first-name', record.first_name)
+        record.last_name = request.form.get('last-name', record.last_name)
+        record.email = request.form.get('email', record.email)
+        record.grant_type = request.form.get('grant-type', record.grant_type)
+
+        # Handle numeric fields safely
+        try:
+            record.funding_amount = float(request.form.get('funding-amount', record.funding_amount))
+        except ValueError:
+            return "Invalid funding amount", 400
+
+        record.special_award = request.form.get('special-award-checkbox') == "on"
+        record.award_details = request.form.get('special-award-details', record.award_details)
+
+        # Commit changes to the database
+        db.session.commit()
+        print(f"Record {id} updated successfully!")
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        print("Error updating data:", str(e))
+        return "Failed to update record", 500
+
+    return redirect(url_for('listview'))  # Redirect to the list after updating
 
 @application.route('/logout')
 def logout():
