@@ -2,9 +2,9 @@ name: Python Unit Testing Pipeline
 
 on:
     push:
-        branches:
-            - none
-    pull_request:
+      branches:
+        #- main
+        - Feature/SCRUM-15-UnitTesting
 
 jobs:
     test:
