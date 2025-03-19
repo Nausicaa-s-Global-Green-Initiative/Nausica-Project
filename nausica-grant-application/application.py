@@ -9,6 +9,8 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import SQLAlchemyError
 from flask_migrate import Migrate
 from flasgger import Swagger, swag_from
+from flask_login import login_required
+from flask_wtf.csrf import CSRFProtect
 
 # Load environment variables from .env file
 load_dotenv()
@@ -20,6 +22,9 @@ from models import ApplicationForm
 application = Flask(__name__)
 application.secret_key = os.getenv("FLASK_SECRET_KEY")
 swagger = Swagger(application)
+
+# Create and initialize CSRF protection
+csrf = CSRFProtect(application)
 
 # HTTPS Redirect Middleware
 @application.before_request
@@ -130,6 +135,59 @@ def listview():
     return render_template('listview.html', records=records)
 
 
+@application.route('/edit/<int:id>', methods=['GET'])
+def edit_application(id):
+    """Display the form for editing an application."""
+    try:
+        # Fetch record by ID using SQLAlchemy
+        record = db.session.get(ApplicationForm, id)
+        if not record:
+            return "Record not found", 404
+    except SQLAlchemyError as e:
+        print("Error fetching data:", str(e))
+        return "Database error", 500
+
+    return render_template('edit_form.html', record=record)
+
+@application.route('/edit/<int:id>', methods=['POST'])
+def update_application(id):
+    """Process the form submission to update an application."""
+    try:
+        # Fetch record by ID using SQLAlchemy
+        record = db.session.get(ApplicationForm, id)
+        if not record:
+            return "Record not found", 404
+
+        # **Double-check if the record still exists before updating**
+        db.session.refresh(record)  # Ensures the record is not deleted
+
+        if not record:
+            return "Error: Record was deleted before updating.", 404
+
+        # Get updated form data
+        record.first_name = request.form.get('first-name', record.first_name)
+        record.last_name = request.form.get('last-name', record.last_name)
+        record.email = request.form.get('email', record.email)
+        record.grant_type = request.form.get('grant-type', record.grant_type)
+
+        # Handle numeric fields safely
+        try:
+            record.funding_amount = float(request.form.get('funding-amount', record.funding_amount))
+        except ValueError:
+            return "Invalid funding amount", 400
+
+        record.special_award = request.form.get('special-award-checkbox') == "on"
+        record.award_details = request.form.get('special-award-details', record.award_details)
+
+        # Commit changes to the database
+        db.session.commit()
+        print(f"Record {id} updated successfully!")
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        print("Error updating data:", str(e))
+        return "Failed to update record", 500
+
+    return redirect(url_for('listview'))  # Redirect to the list after updating
 
 @application.route('/logout')
 def logout():
@@ -232,7 +290,7 @@ def submit_application():
     return "Invalid Request", 400
 
 
-
+"""
 if __name__ == "__main__":
     if 'localhost' in request.host or '127.0.0.1' in request.host:
         # Run with debug mode but without SSL for local development
@@ -245,4 +303,16 @@ if __name__ == "__main__":
             debug=True, 
             ssl_context='adhoc'  # Uses a self-signed certificate
         )
-
+"""
+if __name__ == "__main__":
+    is_local = os.getenv("FLASK_ENV", "production") == "development"
+    
+    if is_local:
+        application.run(host="0.0.0.0", port=5000, debug=True)
+    else:
+        application.run(
+            host="0.0.0.0", 
+            port=5000, 
+            debug=False, 
+            ssl_context='adhoc'  # Uses a self-signed certificate
+        )
