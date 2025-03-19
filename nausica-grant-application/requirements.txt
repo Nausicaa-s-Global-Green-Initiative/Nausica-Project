@@ -3,7 +3,6 @@ gunicorn
 flasgger
 Flask-SQLAlchemy
 python-dotenv
-pymysql
 flask-migrate
 flask-login
-
+boto3
