@@ -188,8 +188,13 @@ def is_authorized_iam_user(arn):
 
     return False  # Deny access if not in the allowed group
 
+@application.route('/admin/login', methods=['GET'])
+def admin_login_get():
+    """Render the admin login page for GET requests."""
+    return render_template('admin_login.html')
 
-@application.route('/admin/login', methods=['GET', 'POST'])
+
+@application.route('/admin/login', methods=['POST'])
 def admin_login():
     """Authenticate IAM Users & Check Authorization"""
     if request.method == 'POST':
