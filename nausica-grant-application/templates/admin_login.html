@@ -116,5 +116,15 @@
             </div>
         </form>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const cancelBtn = document.querySelector('.cancel-btn');
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', function() {
+                    window.location.href = this.getAttribute('data-url');
+                });
+            }
+        });
+    </script>
 </body>
 </html>
