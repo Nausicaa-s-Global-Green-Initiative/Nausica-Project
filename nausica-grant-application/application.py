@@ -1,30 +1,50 @@
 """Basic Flask application for rendering web pages."""
 
-import os
-import pymysql
+import os, boto3
 import time
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import SQLAlchemyError
 from flask_migrate import Migrate
 from flasgger import Swagger, swag_from
 from flask_login import login_required
+from db_config import db  # Import db from db_config
+from models import ApplicationForm 
 from flask_wtf.csrf import CSRFProtect
 
-# Load environment variables from .env file
-load_dotenv()
-
-from flask import Flask, render_template, request, redirect, url_for, jsonify, session
-from db_config import db  # Import db from db_config
-from models import ApplicationForm  
-
+ 
 application = Flask(__name__)
 application.secret_key = os.getenv("FLASK_SECRET_KEY")
 swagger = Swagger(application)
 
+
+# Load environment variables from .env file
+load_dotenv()
+
+
 # Create and initialize CSRF protection
 csrf = CSRFProtect(application)
+
+#-----------------------------------------
+
+# Initialize Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(application)
+login_manager.login_view = "admin_login"  # Redirects unauthorized users to login page
+
+# User class for authentication
+class User(UserMixin):
+    def __init__(self, username):
+        self.id = username
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User(user_id)
+
+#----------------------------------------------------
+
 
 # HTTPS Redirect Middleware
 @application.before_request
@@ -114,6 +134,7 @@ def apply():
 
 ### Swagger: Get for all grant applications
 @application.route('/listview')
+@login_required
 @swag_from({
     'summary': 'List all applications',
     'description': 'Displays all submitted applications in tabular format',
@@ -123,6 +144,7 @@ def apply():
         }
     }
 })
+
 
 def listview():
     """Retrieve all records and display in an HTML page using SQLAlchemy."""
@@ -135,7 +157,112 @@ def listview():
     return render_template('listview.html', records=records)
 
 
+
+
+#----------------------
+
+# Flask-Login setup
+
+ALLOWED_IAM_GROUP = "Flask-Admin"  # Group name to restrict access
+
+class User(UserMixin):
+    def __init__(self, username):
+        self.id = username
+
+def is_authorized_iam_user(arn):
+    """
+    Checks if the IAM user belongs to the Flask-Admin group.
+    """
+    iam_client = boto3.client('iam')
+    user_name = arn.split("/")[-1]  # Extract IAM username from ARN
+
+    try:
+        # Check if the user belongs to the allowed IAM group
+        groups = iam_client.list_groups_for_user(UserName=user_name)
+        for group in groups.get('Groups', []):
+            if group['GroupName'] == ALLOWED_IAM_GROUP:
+                print(f"User {user_name} is in the allowed group: {ALLOWED_IAM_GROUP}")
+                return True  # User is authorized immediately when found
+
+        print(f"User {user_name} is NOT in the allowed group: {ALLOWED_IAM_GROUP}")
+    
+    except boto3.exceptions.Boto3Error as boto_error:
+        print(f"IAM API error: {boto_error}")
+    except Exception as e:
+        print(f"Authorization check failed for {user_name}: {e}")
+
+    return False  # Deny access if not in the allowed group
+
+@application.route('/admin/login', methods=['GET'])
+def admin_login_get():
+    """Render the admin login page for GET requests."""
+    return render_template('admin_login.html')
+
+
+@application.route('/admin/login', methods=['POST'])
+def admin_login():
+    """Authenticate IAM Users & Check Authorization"""
+    if request.method == 'POST':
+        access_key = request.form.get('access_key')
+        secret_key = request.form.get('secret_key')
+
+        if not access_key or not secret_key:
+            return "Missing credentials!", 400
+
+        try:
+            # Authenticate IAM User
+            sts_client = boto3.client(
+                'sts',
+                aws_access_key_id=access_key,
+                aws_secret_access_key=secret_key
+            )
+
+            identity = sts_client.get_caller_identity()
+            user_arn = identity["Arn"]  # IAM User ARN
+            user_id = identity["UserId"]
+
+            print(f"Successfully authenticated: {user_arn} (User ID: {user_id})")
+
+            # Check if user is authorized (belongs to the allowed IAM group)
+            if not is_authorized_iam_user(user_arn):
+                print(f"Access Denied for {user_arn}")
+                return "Access Denied: Unauthorized IAM User", 403
+
+            # Allow access & log in user
+            login_user(User(user_arn))
+            session['user_arn'] = user_arn  # Store only the ARN, not credentials
+
+            return redirect(url_for('listview'))
+
+        except boto3.exceptions.Boto3Error as boto_error:
+            print(f"Authentication failed due to AWS API error: {boto_error}")
+            return "Authentication failed: AWS API error", 500
+        except Exception as e:
+            print(f"Authentication failed: {e}")
+            return "Authentication failed: Invalid AWS credentials", 401
+
+    return render_template('admin_login.html')
+
+
+@application.route('/admin')
+@login_required
+def admin_dashboard():
+    return f"Welcome to the Admin Panel! Logged in as: {session.get('user_arn')}."
+
+
+@application.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    session.pop("user_arn", None)  # Remove user data from session
+
+    return redirect(url_for('home'))
+
+#----------------------
+
+
 @application.route('/edit/<int:id>', methods=['GET'])
+@login_required
 def edit_application(id):
     """Display the form for editing an application."""
     try:
@@ -188,11 +315,6 @@ def update_application(id):
         return "Failed to update record", 500
 
     return redirect(url_for('listview'))  # Redirect to the list after updating
-
-@application.route('/logout')
-def logout():
-    """Dummy logout route to prevent BuildError."""
-    return redirect(url_for('home'))
 
 
 ### Swagger: POST for application form
