@@ -12,6 +12,7 @@ from flasgger import Swagger, swag_from
 from flask_login import login_required
 from db_config import db  # Import db from db_config
 from models import ApplicationForm 
+from flask_wtf.csrf import CSRFProtect
 
  
 application = Flask(__name__)
@@ -21,6 +22,10 @@ swagger = Swagger(application)
 
 # Load environment variables from .env file
 load_dotenv()
+
+
+# Create and initialize CSRF protection
+csrf = CSRFProtect(application)
 
 #-----------------------------------------
 
