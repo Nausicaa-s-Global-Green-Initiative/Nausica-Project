@@ -27,8 +27,9 @@ jobs:
 
         - name: Run unit tests
           run: |
+                pytest nausica-grant-application/tests --disable-warnings
                 #python -m unittest discover -s tests
-                pytest tests
+                #pytest tests
         
         - name: Lint with flake8
           run: |
