@@ -1,6 +1,5 @@
 import pytest
-from nausica_grant_application.app import app as flask_app
-
+from app import app as flask_app
 
 @pytest.fixture
 def client():
