@@ -13,6 +13,7 @@ from flask_login import login_required
 from db_config import db  # Import db from db_config
 from models import ApplicationForm 
 from flask_wtf.csrf import CSRFProtect
+from db_logger import AppLogger
 
  
 application = Flask(__name__)
@@ -116,7 +117,7 @@ def home():
 @application.errorhandler(400)
 def handle_bad_request(e):
     """Handle 400 Bad Request errors."""
-    print("Failed to process request:", request.form)
+    AppLogger.warning(f"Bad request: {request.path}", source="error_handler")
     return "Bad Request: Check terminal for more details.", 400
 
 @application.route("/about")
@@ -223,6 +224,8 @@ def admin_login():
 
             print(f"Successfully authenticated: {user_arn} (User ID: {user_id})")
 
+            AppLogger.info(f"User {user_arn} successfully authenticated", source="admin_login")
+
             # Check if user is authorized (belongs to the allowed IAM group)
             if not is_authorized_iam_user(user_arn):
                 print(f"Access Denied for {user_arn}")
@@ -239,6 +242,7 @@ def admin_login():
             return "Authentication failed: AWS API error", 500
         except Exception as e:
             print(f"Authentication failed: {e}")
+            AppLogger.error(f"Authentication failed", source="admin_login")
             return "Authentication failed: Invalid AWS credentials", 401
 
     return render_template('admin_login.html')
@@ -379,6 +383,10 @@ def update_application(id):
 def submit_application():
     """Handle form submission and save data using SQLAlchemy."""
     if request.method == 'POST':
+        # Debug: Print the form data
+        print("Form data:", request.form)
+        print("Files:", request.files)
+        
         try:
             first_name = request.form.get('first-name')
             last_name = request.form.get('last-name')
@@ -400,11 +408,14 @@ def submit_application():
 
             db.session.add(application_form)
             db.session.commit()
-            print("Data successfully saved to database!")
-
+            
+            AppLogger.info(f"Application submitted by {first_name} {last_name}", 
+                          user_id=email, 
+                          source="submit_application")
+            
         except SQLAlchemyError as e:
             db.session.rollback()
-            print("Error inserting into database:", str(e))
+            AppLogger.exception("Failed to submit application", exc=e, source="submit_application")
             return jsonify(error=str(e), message="Failed to process request"), 500
 
         return redirect(url_for('home'))

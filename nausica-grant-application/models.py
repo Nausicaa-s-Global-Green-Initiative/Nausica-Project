@@ -1,6 +1,8 @@
 """Database models for the grant application system."""
 from datetime import datetime
 from db_config import db
+from sqlalchemy import Column, Integer, String, DateTime, Text
+from sqlalchemy.sql import func
 
 
 class ApplicationForm(db.Model):
@@ -62,3 +64,20 @@ class ApplicationForm(db.Model):
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'status': self.status
         }
+
+
+class ApplicationLog(db.Model):
+    """Model for application logs table."""
+    __tablename__ = 'application_logs'
+    
+    log_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    timestamp = db.Column(db.DateTime, default=func.now(), nullable=False, index=True)
+    log_level = db.Column(db.String(10), nullable=False, index=True)  # INFO, WARNING, ERROR, etc.
+    message = db.Column(db.Text, nullable=False)
+    
+    # Optional additional fields for better debugging
+    user_id = db.Column(db.String(255), nullable=True)  # User who triggered the action (if applicable)
+    source = db.Column(db.String(255), nullable=True)  # Component that generated the log
+    
+    def __repr__(self):
+        return f"<Log {self.log_id}: [{self.log_level}] {self.message[:50]}{'...' if len(self.message) > 50 else ''}>"
