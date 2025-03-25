@@ -1,29 +1,15 @@
-@@ -1,190 +1,158 @@
- 
 """Basic Flask application for rendering web pages."""
- 
 
- 
 import os
- 
 import pymysql
- 
 import time
- 
 from dotenv import load_dotenv
- 
 from flask import Flask, render_template, request, redirect, url_for, jsonify
- 
 from flask_sqlalchemy import SQLAlchemy
- 
 from sqlalchemy.exc import SQLAlchemyError
- 
 from flask_migrate import Migrate
- 
 from flasgger import Swagger
- 
 
- 
 # Load environment variables from .env file
  
 load_dotenv()
