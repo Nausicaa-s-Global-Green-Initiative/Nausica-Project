@@ -48,27 +48,27 @@ def load_user(user_id):
 
 
 # HTTPS Redirect Middleware
-@application.before_request
-def before_request():
+#@application.before_request
+#def before_request():
     # Don't redirect HTTPS requests (prevents redirect loops)
-    if request.is_secure:
-        pass
+#    if request.is_secure:
+#        pass
     # Skip HTTPS redirect for localhost
-    elif 'localhost' in request.host or '127.0.0.1' in request.host:
-        pass
+#    elif 'localhost' in request.host or '127.0.0.1' in request.host:
+#        pass
     # Redirect HTTP to HTTPS in production
-    else:
-        url = request.url.replace('http://', 'https://', 1)
-        return redirect(url, code=301)
+#    else:
+#        url = request.url.replace('http://', 'https://', 1)
+#        return redirect(url, code=301)
     
     # Configure cookies based on environment
-    if 'localhost' in request.host or '127.0.0.1' in request.host:
-        application.config['SESSION_COOKIE_SECURE'] = False
-        application.config['REMEMBER_COOKIE_SECURE'] = False
-        application.config['SESSION_COOKIE_DOMAIN'] = None
-    else:
-        application.config['SESSION_COOKIE_SECURE'] = True
-        application.config['REMEMBER_COOKIE_SECURE'] = True
+#    if 'localhost' in request.host or '127.0.0.1' in request.host:
+#        application.config['SESSION_COOKIE_SECURE'] = False
+#        application.config['REMEMBER_COOKIE_SECURE'] = False
+#        application.config['SESSION_COOKIE_DOMAIN'] = None
+#    else:
+#        application.config['SESSION_COOKIE_SECURE'] = True
+#        application.config['REMEMBER_COOKIE_SECURE'] = True
 
 # Set up database configuration
 application.config['SQLALCHEMY_DATABASE_URI'] = (
@@ -128,7 +128,7 @@ def about():
 @application.route('/apply')
 def apply():
     """Render the application.html page."""
-    session['visited_apply'] = True
+    #session['visited_apply'] = True
     #print("Session contents:", dict(session))  # Debug session
     #print("Secret key is set:", application.secret_key is not None)  # Check if key is loaded
     return render_template('application.html')
@@ -423,20 +423,20 @@ def submit_application():
     return "Invalid Request", 400
 
 
-"""
-if __name__ == "__main__":
-    if 'localhost' in request.host or '127.0.0.1' in request.host:
+#"""
+#if __name__ == "__main__":
+    #if 'localhost' in request.host or '127.0.0.1' in request.host:
         # Run with debug mode but without SSL for local development
-        application.run(host="0.0.0.0", port=5000, debug=True)
-    else:
-        # Run with SSL for development testing of HTTPS
-        application.run(
-            host="0.0.0.0", 
-            port=5000, 
-            debug=True, 
-            ssl_context='adhoc'  # Uses a self-signed certificate
-        )
-"""
+    #    application.run(host="0.0.0.0", port=5000, debug=True)
+    #else:
+    #    # Run with SSL for development testing of HTTPS
+     #   application.run(
+    #        host="0.0.0.0", 
+    #        port=5000, 
+    #        debug=True, 
+    #        ssl_context='adhoc'  # Uses a self-signed certificate
+    #    )
+#"""
 if __name__ == "__main__":
     is_local = os.getenv("FLASK_ENV", "production") == "development"
     
