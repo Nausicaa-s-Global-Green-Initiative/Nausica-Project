@@ -7,3 +7,5 @@ flask-migrate
 flask-login
 boto3
 Flask-WTF
+dotenv
+pymysql
