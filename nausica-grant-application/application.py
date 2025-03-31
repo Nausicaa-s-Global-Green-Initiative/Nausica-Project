@@ -58,6 +58,11 @@ db.init_app(application)  # Initialize db with app
 # Initialize Flask Migrate
 migrate = Migrate(application, db)
 
+@application.route('/health', methods=['GET'])
+def health_check():
+    """Health check endpoint to return a 200 status."""
+    return jsonify(status="OK"), 200
+
 @application.route("/", methods=['GET', 'POST'])
 def home():
     """Handle POST requests for form submissions."""
