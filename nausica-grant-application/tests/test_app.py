@@ -7,6 +7,7 @@ from models import ApplicationForm
 import uuid
 #from application import auth_utils
 
+
 # Define mock boto3 client fixture
 @pytest.fixture
 def mock_boto_client():
@@ -38,7 +39,11 @@ def client():
     with flask_app.test_client() as client:
         yield client
 
-
+@pytest.fixture
+def mock_db():
+    with patch('application.db.session') as mock_session:
+        yield mock_session
+        
 def test_home_get(client):
     """Test the home route with a GET request."""
     response = client.get("/")
