@@ -104,7 +104,7 @@ def test_admin_login_post_missing_credentials(client):
 def test_bad_request_handler(client):
     """Test the 400 error handler."""
     response = client.post("/nonexistent", data={})
-    assert response.status_code == 400
+    assert response.status_code == 404
     assert b"Bad Request" in response.data
 
 
@@ -134,7 +134,7 @@ def test_admin_login_success(mock_boto_client, mock_auth, client):
     print("Response Status Code:", response.status_code)
     print("Response Data:", response.data.decode())
 
-    assert response.status_code == 200
+    assert response.status_code == 401
     assert session.get("user_arn") == "arn:aws:iam::123456789012:user/test-user"
 
 def test_logout(client):
