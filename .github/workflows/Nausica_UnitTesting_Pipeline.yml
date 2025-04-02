@@ -31,14 +31,15 @@ jobs:
     - name: Install AWS CLI & Elastic Beanstalk CLI
       run: |
         python -m pip install --upgrade pip
-        pip install awscli
-        pip install awsebcli
+        pip install awscli==1.18.69
+        pip install awsebcli==3.20.3
         pip install --upgrade awscli botocore
         
     - name: Configure AWS CLI
       run: |
         aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws configure set region ${{ secrets.AWS_REGION }}
         
     - name: Deploy to Elastic Beanstalk
       env:

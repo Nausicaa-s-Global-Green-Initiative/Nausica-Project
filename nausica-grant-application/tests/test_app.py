@@ -43,6 +43,13 @@ def client():
 def mock_db():
     with patch('application.db.session') as mock_session:
         yield mock_session
+
+@pytest.fixture
+def mock_aws_credentials():
+    os.environ['AWS_ACCESS_KEY_ID'] = 'testing'
+    os.environ['AWS_SECRET_ACCESS_KEY'] = 'testing'
+    os.environ['AWS_SECURITY_TOKEN'] = 'testing'
+    os.environ['AWS_SESSION_TOKEN'] = 'testing'
         
 def test_home_get(client):
     """Test the home route with a GET request."""
@@ -124,7 +131,7 @@ def test_logout(client):
 ##Trying to test admin login page
 #@patch("application.auth_utils.is_authorized_iam_user", return_value=True)
 #@patch("boto3.client")
-@pytest.mark.usefixtures("mock_boto_client", "mock_auth")
+@pytest.mark.usefixtures("mock_aws_credentials")
 def test_admin_login_success(mock_boto_client, mock_auth, client):
     """Test successful IAM login."""
     mock_sts = MagicMock()
