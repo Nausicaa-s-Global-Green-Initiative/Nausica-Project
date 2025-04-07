@@ -112,7 +112,6 @@ def test_admin_login_post_missing_credentials(client):
     assert response.status_code == 400
     assert b"Missing credentials!" in response.data
 
-# FIX 2: Fixed test_logout by properly patching the logout_user function
 def test_logout(client):
     """Test logout functionality"""
     # Set up session data
