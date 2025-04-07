@@ -91,9 +91,6 @@ def home():
             email = request.form['email']
             grant_type = request.form['grant_type']
 
-             # Log the received form data
-            print(f"Received form data: {first_name}, {last_name}, {email}, {grant_type}")
-
             # Create an instance of GrantApplication model with the form submission data
             application_form = ApplicationForm(
                 first_name=first_name,
