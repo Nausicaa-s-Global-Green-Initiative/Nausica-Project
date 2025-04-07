@@ -77,9 +77,10 @@ jobs:
     - name: Install SBOM Generator
       run: pip install cyclonedx-bom
 
-    - name: Generate SBOM
+    - name: Generate SBOM (CycloneDX)
       run: |
-        cyclonedx-py requirements -i nausica-grant-application/requirements.txt -o sbom.xml
+        cd nausica-grant-application
+        cyclonedx-py requirements -i requirements.txt -o ../sbom.xml
 
     - name: Upload SBOM Artifact
       uses: actions/upload-artifact@v4
