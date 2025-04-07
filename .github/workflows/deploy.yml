@@ -73,3 +73,16 @@ jobs:
         retry-delay: 5s # Optional, only applicable to max-attempts > 1
         # Retry all errors, including 404. This option might trigger curl upgrade.
         retry-all: false # Optional, defaults to "false"
+
+    - name: Install SBOM Generator
+      run: pip install cyclonedx-bom
+
+    - name: Generate SBOM
+      run: |
+        cyclonedx-py -r -o sbom.xml
+
+    - name: Upload SBOM Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: sbom
+        path: sbom.xml
