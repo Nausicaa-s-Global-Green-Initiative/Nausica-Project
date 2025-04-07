@@ -13,6 +13,7 @@ from flask_login import login_required
 from db_config import db  # Import db from db_config
 from models import ApplicationForm 
 from flask_wtf.csrf import CSRFProtect
+from db_logger import AppLogger
 
  
 application = Flask(__name__)
@@ -45,30 +46,6 @@ def load_user(user_id):
 
 #----------------------------------------------------
 
-
-# HTTPS Redirect Middleware
-@application.before_request
-def before_request():
-    # Don't redirect HTTPS requests (prevents redirect loops)
-    if request.is_secure:
-        pass
-    # Skip HTTPS redirect for localhost
-    elif 'localhost' in request.host or '127.0.0.1' in request.host:
-        pass
-    # Redirect HTTP to HTTPS in production
-    else:
-        url = request.url.replace('http://', 'https://', 1)
-        return redirect(url, code=301)
-    
-    # Configure cookies based on environment
-    if 'localhost' in request.host or '127.0.0.1' in request.host:
-        application.config['SESSION_COOKIE_SECURE'] = False
-        application.config['REMEMBER_COOKIE_SECURE'] = False
-        application.config['SESSION_COOKIE_DOMAIN'] = None
-    else:
-        application.config['SESSION_COOKIE_SECURE'] = True
-        application.config['REMEMBER_COOKIE_SECURE'] = True
-
 # Set up database configuration
 application.config['SQLALCHEMY_DATABASE_URI'] = (
     f"mysql+pymysql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@"
@@ -80,6 +57,11 @@ db.init_app(application)  # Initialize db with app
 
 # Initialize Flask Migrate
 migrate = Migrate(application, db)
+
+@application.route('/health', methods=['GET'])
+def health_check():
+    """Health check endpoint to return a 200 status."""
+    return jsonify(status="OK"), 200
 
 @application.route("/", methods=['GET', 'POST'])
 def home():
@@ -116,7 +98,7 @@ def home():
 @application.errorhandler(400)
 def handle_bad_request(e):
     """Handle 400 Bad Request errors."""
-    print("Failed to process request:", request.form)
+    AppLogger.warning(f"Bad request: {request.path}", source="error_handler")
     return "Bad Request: Check terminal for more details.", 400
 
 @application.route("/about")
@@ -128,8 +110,6 @@ def about():
 def apply():
     """Render the application.html page."""
     session['visited_apply'] = True
-    #print("Session contents:", dict(session))  # Debug session
-    #print("Secret key is set:", application.secret_key is not None)  # Check if key is loaded
     return render_template('application.html')
 
 ### Swagger: Get for all grant applications
@@ -144,8 +124,6 @@ def apply():
         }
     }
 })
-
-
 def listview():
     """Retrieve all records and display in an HTML page using SQLAlchemy."""
     try:
@@ -155,9 +133,6 @@ def listview():
         records = []
 
     return render_template('listview.html', records=records)
-
-
-
 
 #----------------------
 
@@ -223,6 +198,8 @@ def admin_login():
 
             print(f"Successfully authenticated: {user_arn} (User ID: {user_id})")
 
+            AppLogger.info(f"User {user_arn} successfully authenticated", source="admin_login")
+
             # Check if user is authorized (belongs to the allowed IAM group)
             if not is_authorized_iam_user(user_arn):
                 print(f"Access Denied for {user_arn}")
@@ -239,6 +216,7 @@ def admin_login():
             return "Authentication failed: AWS API error", 500
         except Exception as e:
             print(f"Authentication failed: {e}")
+            AppLogger.error(f"Authentication failed", source="admin_login")
             return "Authentication failed: Invalid AWS credentials", 401
 
     return render_template('admin_login.html')
@@ -379,6 +357,10 @@ def update_application(id):
 def submit_application():
     """Handle form submission and save data using SQLAlchemy."""
     if request.method == 'POST':
+        # Debug: Print the form data
+        print("Form data:", request.form)
+        print("Files:", request.files)
+        
         try:
             first_name = request.form.get('first-name')
             last_name = request.form.get('last-name')
@@ -400,41 +382,24 @@ def submit_application():
 
             db.session.add(application_form)
             db.session.commit()
-            print("Data successfully saved to database!")
-
+            
+            AppLogger.info(f"Application submitted by {first_name} {last_name}", 
+                          user_id=email, 
+                          source="submit_application")
+            
         except SQLAlchemyError as e:
             db.session.rollback()
-            print("Error inserting into database:", str(e))
+            AppLogger.exception("Failed to submit application", exc=e, source="submit_application")
             return jsonify(error=str(e), message="Failed to process request"), 500
 
         return redirect(url_for('home'))
 
     return "Invalid Request", 400
 
-
-"""
-if __name__ == "__main__":
-    if 'localhost' in request.host or '127.0.0.1' in request.host:
-        # Run with debug mode but without SSL for local development
-        application.run(host="0.0.0.0", port=5000, debug=True)
-    else:
-        # Run with SSL for development testing of HTTPS
-        application.run(
-            host="0.0.0.0", 
-            port=5000, 
-            debug=True, 
-            ssl_context='adhoc'  # Uses a self-signed certificate
-        )
-"""
 if __name__ == "__main__":
     is_local = os.getenv("FLASK_ENV", "production") == "development"
     
     if is_local:
         application.run(host="0.0.0.0", port=5000, debug=True)
     else:
-        application.run(
-            host="0.0.0.0", 
-            port=5000, 
-            debug=False, 
-            ssl_context='adhoc'  # Uses a self-signed certificate
-        )
+        application.run(host="0.0.0.0", port=5000)

@@ -59,3 +59,31 @@ jobs:
         env | grep DB_
         eb init "$EB_APPLICATION_NAME" --region "$AWS_REGION" --platform "Python 3.9"
         eb deploy "$EB_ENVIRONMENT_NAME"
+
+    - name: URL Health Check
+      uses: Jtalk/url-health-check-action@v4
+      with:
+        # Check the following URLs one by one sequentially
+        url: http://nausicaagrantapplication.eu-west-1.elasticbeanstalk.com//health
+        # Follow redirects, or just report success on 3xx status codes
+        follow-redirect: false # Optional, defaults to "false"
+        # Fail this action after this many failed attempts
+        max-attempts: 3 # Optional, defaults to 1
+        # Delay between retries
+        retry-delay: 5s # Optional, only applicable to max-attempts > 1
+        # Retry all errors, including 404. This option might trigger curl upgrade.
+        retry-all: false # Optional, defaults to "false"
+
+    - name: Install SBOM Generator
+      run: pip install cyclonedx-bom
+
+    - name: Generate SBOM (CycloneDX)
+      run: |
+        cd nausica-grant-application
+        cyclonedx-py requirements -i requirements.txt -o ../sbom.xml
+
+    - name: Upload SBOM Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: sbom
+        path: sbom.xml
