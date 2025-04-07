@@ -79,7 +79,7 @@ jobs:
 
     - name: Generate SBOM
       run: |
-        cyclonedx-py -r -o sbom.xml
+        cyclonedx-py requirements -i nausica-grant-application/requirements.txt -o sbom.xml
 
     - name: Upload SBOM Artifact
       uses: actions/upload-artifact@v4
