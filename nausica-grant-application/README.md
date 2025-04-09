@@ -21,3 +21,17 @@ To successfully run this example, we recommend the following VS Code extensions:
 - To test your app, ensure you have the dependencies from `dev-requirements.txt` installed in your environment
 - Navigate to the Test Panel to configure your Python test or by triggering the **Python: Configure Tests** command from the Command Palette
 - Run tests in the Test Panel or by clicking the Play Button next to the individual tests in the `test_app.py` file
+## Software Bill of Materials (SBOM)
+
+This project includes an SBOM which lists all dependencies and their respective metadata, such as versions, licenses, and sources. The SBOM follows the SPDX (Software Package Data Exchange) format, ensuring it meets industry standards for software transparency.
+
+### SBOM Highlights
+
+- **Total Dependencies**: 41
+- **Primary Application**: nausica-grant-application@0.0.0
+- **Noteworthy Dependencies**:
+  - Flask@3.1.0 - BSD-3-Clause
+  - pytest@8.3.5 - MIT
+  - boto3@1.37.16 - Apache-2.0
+
+For detailed information about each component and its license, please refer to the full SBOM included in the repository or accessible [here](https://snyk.io/spdx/sbom-ec16c876-54f9-49bb-a405-eb778ed37895).

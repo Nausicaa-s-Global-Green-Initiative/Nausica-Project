@@ -1,0 +1,122 @@
+@import url('https://fonts.googleapis.com/css?family=Titillium+Web:300,400,600');
+
+body {
+  background: url('../images/background.png') no-repeat center center fixed;
+  background-size: cover;
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.container {
+  background: rgba(0, 0, 0, 0.5);
+  padding: 10px;
+  border-radius: 10px;
+  color: white;
+  text-align: center;
+  width: 50%;
+}
+
+.form-container {
+  background: rgba(255, 255, 255, 0.8);
+  padding: 15px;
+  border-radius: 10px;
+  color: black;
+  margin-top: 5px;
+}
+
+
+.form-group {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+
+.form-group label,
+.checkbox-group label {
+  font-family: 'Titillium Web', sans-serif;
+  font-weight: bold;
+  width: 30%;
+  text-align: right;
+  margin-right: 10px;
+  font-size: 16px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  font-family: 'Titillium Web', sans-serif;
+  width: 65%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+
+.button-group {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 5px;
+}
+
+
+.form-container button {
+  padding: 6px 12px;
+  font-size: 14px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-left: 10px;
+  width: 30%;
+}
+
+.submit-btn {
+  background-color: #28a745;
+  color: white;
+}
+
+.submit-btn:hover {
+  background-color: #218838;
+}
+
+.cancel-btn {
+  background-color: #dc3545;
+  color: white;
+}
+
+.cancel-btn:hover {
+  background-color: #c82333;
+}
+
+/* Checkbox group */
+.checkbox-group {
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+/* Checkbox label */
+.checkbox-group label {
+  font-family: 'Titillium Web', sans-serif;
+  font-weight: bold;
+  width: 30%;
+  text-align: right;
+  margin-right: 10px;
+  font-size: 16px;
+}
+
+/* Checkbox styling */
+.checkbox-group input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  margin-left: 4px;
+  transform: scale(1.2);
+}

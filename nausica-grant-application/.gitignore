@@ -1,6 +1,7 @@
 # Environments
 .env
 .venv
+.idea
 env/
 venv/
 ENV/
@@ -15,3 +16,5 @@ __pycache__/
 # Flask stuff:
 instance/
 .webassets-cache
+.env
+.env
