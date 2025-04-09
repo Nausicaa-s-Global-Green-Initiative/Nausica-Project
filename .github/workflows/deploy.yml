@@ -55,6 +55,8 @@ jobs:
         DB_HOST: ${{ secrets.DB_HOST }}
         DB_NAME: ${{ secrets.DB_NAME }}
         DB_PORT: ${{ secrets.DB_PORT }}
+        ADMIN_USERNAME: ${{ secrets.username }}
+        ADMIN_PASSWORD: ${{ secrets.password }}
       run: |
         env | grep DB_
         eb init "$EB_APPLICATION_NAME" --region "$AWS_REGION" --platform "Python 3.9"
