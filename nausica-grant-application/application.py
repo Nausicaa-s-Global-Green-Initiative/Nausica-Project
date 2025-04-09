@@ -1,11 +1,9 @@
 """Basic Flask application for rendering web pages."""
 
-import os, boto3
-import time
+import os, time
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import SQLAlchemyError
 from flask_migrate import Migrate
 from flasgger import Swagger, swag_from
@@ -14,26 +12,35 @@ from db_config import db  # Import db from db_config
 from models import ApplicationForm 
 from flask_wtf.csrf import CSRFProtect
 from db_logger import AppLogger
-
- 
-application = Flask(__name__)
-application.secret_key = os.getenv("FLASK_SECRET_KEY")
-swagger = Swagger(application)
-
+from werkzeug.security import check_password_hash, generate_password_hash
+import secrets
 
 # Load environment variables from .env file
 load_dotenv()
 
+application = Flask(__name__)
+application.secret_key = os.getenv("FLASK_SECRET_KEY", secrets.token_hex(16))
+swagger = Swagger(application)
 
 # Create and initialize CSRF protection
 csrf = CSRFProtect(application)
 
-#-----------------------------------------
+# Admin credentials from environment variables (no defaults for security)
+ADMIN_USERNAME = os.getenv("ADMIN_USERNAME")
+ADMIN_PASSWORD_HASH = None
+
+# If admin password is in environment, hash it at startup
+if os.getenv("ADMIN_PASSWORD"):
+    ADMIN_PASSWORD_HASH = generate_password_hash(os.getenv("ADMIN_PASSWORD"))
+
+# Display warning if credentials are not set
+if not ADMIN_USERNAME or not ADMIN_PASSWORD_HASH:
+    print("WARNING: Admin credentials not configured. Set ADMIN_USERNAME and ADMIN_PASSWORD environment variables.")
 
 # Initialize Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(application)
-login_manager.login_view = "admin_login"  # Redirects unauthorized users to login page
+login_manager.login_view = "admin_login_get"  # Redirects unauthorized users to login page
 
 # User class for authentication
 class User(UserMixin):
@@ -43,8 +50,6 @@ class User(UserMixin):
 @login_manager.user_loader
 def load_user(user_id):
     return User(user_id)
-
-#----------------------------------------------------
 
 # Set up database configuration
 application.config['SQLALCHEMY_DATABASE_URI'] = (
@@ -134,110 +139,60 @@ def listview():
 
     return render_template('listview.html', records=records)
 
-#----------------------
-
-# Flask-Login setup
-
-ALLOWED_IAM_GROUP = "Flask-Admin"  # Group name to restrict access
-
-class User(UserMixin):
-    def __init__(self, username):
-        self.id = username
-
-def is_authorized_iam_user(arn):
-    """
-    Checks if the IAM user belongs to the Flask-Admin group.
-    """
-    iam_client = boto3.client('iam')
-    user_name = arn.split("/")[-1]  # Extract IAM username from ARN
-
-    try:
-        # Check if the user belongs to the allowed IAM group
-        groups = iam_client.list_groups_for_user(UserName=user_name)
-        for group in groups.get('Groups', []):
-            if group['GroupName'] == ALLOWED_IAM_GROUP:
-                print(f"User {user_name} is in the allowed group: {ALLOWED_IAM_GROUP}")
-                return True  # User is authorized immediately when found
-
-        print(f"User {user_name} is NOT in the allowed group: {ALLOWED_IAM_GROUP}")
-    
-    except boto3.exceptions.Boto3Error as boto_error:
-        print(f"IAM API error: {boto_error}")
-    except Exception as e:
-        print(f"Authorization check failed for {user_name}: {e}")
-
-    return False  # Deny access if not in the allowed group
-
 @application.route('/admin/login', methods=['GET'])
 def admin_login_get():
     """Render the admin login page for GET requests."""
     return render_template('admin_login.html')
 
-
 @application.route('/admin/login', methods=['POST'])
 def admin_login():
-    """Authenticate IAM Users & Check Authorization"""
+    """Authenticate using simple username/password"""
     if request.method == 'POST':
-        access_key = request.form.get('access_key')
-        secret_key = request.form.get('secret_key')
+        username = request.form.get('username')
+        password = request.form.get('password')
 
-        if not access_key or not secret_key:
+        if not username or not password:
             return "Missing credentials!", 400
 
         try:
-            # Authenticate IAM User
-            sts_client = boto3.client(
-                'sts',
-                aws_access_key_id=access_key,
-                aws_secret_access_key=secret_key
-            )
-
-            identity = sts_client.get_caller_identity()
-            user_arn = identity["Arn"]  # IAM User ARN
-            user_id = identity["UserId"]
-
-            print(f"Successfully authenticated: {user_arn} (User ID: {user_id})")
-
-            AppLogger.info(f"User {user_arn} successfully authenticated", source="admin_login")
-
-            # Check if user is authorized (belongs to the allowed IAM group)
-            if not is_authorized_iam_user(user_arn):
-                print(f"Access Denied for {user_arn}")
-                return "Access Denied: Unauthorized IAM User", 403
-
-            # Allow access & log in user
-            login_user(User(user_arn))
-            session['user_arn'] = user_arn  # Store only the ARN, not credentials
-
-            return redirect(url_for('listview'))
-
-        except boto3.exceptions.Boto3Error as boto_error:
-            print(f"Authentication failed due to AWS API error: {boto_error}")
-            return "Authentication failed: AWS API error", 500
+            # Check if admin credentials are configured
+            if not ADMIN_USERNAME or not ADMIN_PASSWORD_HASH:
+                AppLogger.error("Admin login attempted but credentials not configured", source="admin_login")
+                return "Admin login not configured", 500
+            
+            # Simple username and password validation
+            if username == ADMIN_USERNAME and check_password_hash(ADMIN_PASSWORD_HASH, password):
+                # Login successful
+                user = User(username)
+                login_user(user)
+                session['username'] = username  # Store username in session
+                
+                AppLogger.info(f"Admin user {username} successfully authenticated", source="admin_login")
+                return redirect(url_for('listview'))
+            else:
+                # Add a small delay to prevent brute force attacks
+                time.sleep(1)
+                AppLogger.warning(f"Failed login attempt for username: {username}", source="admin_login")
+                return "Authentication failed: Invalid credentials", 401
+            
         except Exception as e:
             print(f"Authentication failed: {e}")
-            AppLogger.error(f"Authentication failed", source="admin_login")
-            return "Authentication failed: Invalid AWS credentials", 401
+            AppLogger.error(f"Authentication failed: {str(e)}", source="admin_login")
+            return "Authentication failed: Error during login", 500
 
     return render_template('admin_login.html')
-
 
 @application.route('/admin')
 @login_required
 def admin_dashboard():
-    return f"Welcome to the Admin Panel! Logged in as: {session.get('user_arn')}."
-
+    return f"Welcome to the Admin Panel! Logged in as: {session.get('username')}."
 
 @application.route('/logout')
 @login_required
 def logout():
     logout_user()
-    session.pop("user_arn", None)  # Remove user data from session
-
+    session.pop("username", None)  # Remove user data from session
     return redirect(url_for('home'))
-
-#----------------------
-
 
 @application.route('/edit/<int:id>', methods=['GET'])
 @login_required
